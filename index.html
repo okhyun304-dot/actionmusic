@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<title>행동힙합</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css?v=1789811664">
+</head>
+<body>
+<div id="app">
+  <!-- 상단: 뒤로/앞으로 · 홈 · 검색 · 아티스트 -->
+  <header id="top">
+    <div class="hist"><button id="back" title="뒤로">‹</button><button id="fwd" title="앞으로">›</button></div>
+    <a class="home" href="#/" title="홈">⌂</a>
+    <div class="sbox"><span>⌕</span><input id="q" placeholder="무엇을 듣고 싶으세요?" autocomplete="off"></div>
+    <a class="me" href="#/artist" title="배준익">배</a>
+  </header>
+
+  <!-- 왼쪽: 라이브러리 -->
+  <aside id="side">
+    <div class="lib-h"><b>내 라이브러리</b><button id="newpl" title="플레이리스트 만들기">＋</button></div>
+    <div class="chips" id="chips"><button data-f="album" class="on">앨범</button><button data-f="pl">플레이리스트</button></div>
+    <div class="lib-tools"><input id="libq" placeholder="라이브러리 검색"></div>
+    <div id="lib"></div>
+  </aside>
+
+  <!-- 가운데 -->
+  <main id="main"><div id="view"></div></main>
+
+  <!-- 오른쪽: 지금 보는 앨범·장·플레이리스트의 꼭지 목록 -->
+  <aside id="right"><div id="rhead"></div><div id="rlist"></div></aside>
+
+
+  <!-- 폰: 하단 탭 -->
+  <nav id="tabs">
+    <a href="#/" data-nav="home"><i>⌂</i>홈</a>
+    <a href="#/search" data-nav="search"><i>⌕</i>검색</a>
+    <a href="#/lib" data-nav="lib"><i>≡</i>라이브러리</a>
+  </nav>
+
+  <!-- 재생 바 -->
+  <footer id="bar" class="idle">
+    <div class="now" id="now">
+      <img id="now-img" alt="">
+      <div class="now-t"><b id="now-song">—</b><small id="now-sub">곡을 고르면 여기서 재생됩니다</small></div>
+      <button id="now-like" class="like" title="좋아요">♡</button>
+    </div>
+    <div class="ctl">
+      <div class="btns">
+        <button id="shuf" title="셔플">⇄</button>
+        <button id="prev" title="이전">⏮</button>
+        <button id="play" class="big" title="재생">▶</button>
+        <button id="next" title="다음">⏭</button>
+        <button id="rep" title="반복">↻</button>
+      </div>
+      <div class="prog"><span id="t0">0:00</span><div class="track" id="track"><div class="fill" id="fill"><i></i></div></div><span id="t1">0:00</span></div>
+    </div>
+    <div class="side-ctl">
+      <button id="mute" title="음소거">🔊</button>
+      <input id="vol" type="range" min="0" max="100" value="80" title="볼륨">
+      <button id="full" title="전체화면">⛶</button>
+      <div class="video"><div id="yt"></div></div>
+    </div>
+  </footer>
+
+
+  <!-- 전체화면 본문 -->
+  <section id="fs" hidden><button id="fs-close">×</button><div id="fs-in"></div></section>
+
+  <div id="menu" hidden></div>
+  <div id="toast" hidden></div>
+</div>
+<script src="app.js?v=1789811664"></script>
+</body>
+</html>
