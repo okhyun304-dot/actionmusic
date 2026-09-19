@@ -376,3 +376,4 @@ body[data-albums=row] .alb{padding:10px}body[data-albums=row] .alb b{font-size:1
   #bar .prog span{display:none}#bar .track{height:4px;border-radius:0}#bar .track .fill i{display:none}
   .now img{width:40px;height:40px}.now-t b{font-size:13px}.now-t small{font-size:11px}
 }
+#bar.idle .video{visibility:hidden}   /* 재생 전엔 유튜브 칸 숨김 */

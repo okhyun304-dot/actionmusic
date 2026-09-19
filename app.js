@@ -235,14 +235,14 @@ function viewArtist() {
   const top = topTracks(5); const tracks = top.length ? top : DATA.books.flatMap(b => b.tracks.slice(0, 1));
   const ctx = { type: 'album', v: 0 };
   $('#view').innerHTML = `<div class="hero artist" style="--img:url(${DATA.books[0].cover});--c:#222"><div>
-      <div class="verified"><i>✓</i>인증된 아티스트</div><h1>배준익</h1><div class="meta"><span>행동주의자 · 5개 앨범 · ${DATA.books.reduce((a, b) => a + b.tracks.length, 0)}곡</span></div></div></div>
+      <div class="kind">아티스트</div><h1>배준익</h1><div class="meta"><span>행동주의자 · ${DATA.books.length}개 앨범 · ${DATA.books.reduce((a, b) => a + b.tracks.length, 0)}곡</span></div></div></div>
     <div class="under" style="--c:#222">${toolsHtml(ctx)}
       <div class="h2"><span>${top.length ? '많이 들은 꼭지' : '인기 꼭지'}</span></div>
       ${trackRows(tracks, { type: 'album', v: 0 }, { numberByIndex: true, showBook: true })}
       <div class="h2"><span>디스코그래피</span></div><div class="row">${DATA.books.map(cardAlbum).join('')}</div>
       <div class="h2"><span>플레이리스트</span></div><div class="row">${DATA.books.flatMap(b => b.chapters.map(c => cardChapter(b, c))).join('')}</div>
       <div class="h2"><span>소개</span></div>
-      <div class="about"><b>행동주의자 배준익</b>사업가. 새벽에 일어나 글을 쓰고, 음악을 듣고, 텔레그램에 남긴다. 「행동힙합」은 그 글과 음악을 오키가 다섯 권으로 엮은 것이다. 1권 행동힙합(2024) · 2권 힙합자본(2025) · 3권 생존 · 4권 사랑 · 5권 명반(2026).</div></div>`;
+      <div class="about"><b>행동주의자 배준익</b>사업가. 새벽에 일어나 글을 쓰고, 음악을 듣고, 텔레그램에 남긴다. 「행동힙합」은 그 글과 음악을 오키가 다섯 권으로 엮은 것이다. 1권 행동힙합 · 2권 힙합자본 · 3권 생존 · 4권 사랑 · 5권 힙합 · 6권 명반.</div></div>`;
   $('#playall').onclick = () => { const q = tracks.map(t => t.music.map((m, s) => ({ v: t.v, t: t.k, s })).filter((x) => !t.music[x.s].dead)).flat(); startQueue(q, 0, { type: 'artist', name: '배준익' }); };
   bindRows({ type: 'album', v: 0 }); bindCards();
 }
