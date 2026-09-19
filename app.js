@@ -407,7 +407,7 @@ function syncLyrics() {
   const m = trk(q.v, q.t).music[q.s]; const box = $(`#ly-${m.vid}`); if (!box || box.hidden) return;
   const t = YTP.getCurrentTime(); let cur_ = null;
   box.querySelectorAll('p[data-t]').forEach(p => { if (+p.dataset.t <= t + 0.3) cur_ = p; p.classList.remove('now'); });
-  if (cur_) { cur_.classList.add('now'); if (!box.dataset.hold) cur_.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+  if (cur_) { cur_.classList.add('now'); if (!box.dataset.hold) box.scrollTo({ top: cur_.offsetTop - box.clientHeight / 2 + cur_.offsetHeight / 2, behavior: 'smooth' }); }   // 가사 상자 안에서만 움직인다 — 읽던 글은 그대로
 }
 setInterval(syncLyrics, 500);
 document.addEventListener('mousedown', e => { const b = e.target.closest('.lyrics'); if (b) { b.dataset.hold = '1'; clearTimeout(b._h); b._h = setTimeout(() => delete b.dataset.hold, 4000); } });
