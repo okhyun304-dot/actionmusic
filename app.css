@@ -236,12 +236,12 @@ img{display:block}
   #top,#side,#right{display:none}
   #main{grid-column:1;grid-row:1;border-radius:0}
   #bar{grid-column:1;grid-row:2;grid-template-columns:1fr auto;gap:10px;padding:0 12px;background:#282828;margin:0 8px 8px;border-radius:8px;height:56px}
-  #bar .side-ctl{display:none}
+  #bar .side-ctl{display:flex;gap:0}#bar .side-ctl #mute,#bar .side-ctl #vol,#bar .side-ctl #full{display:none}   /* 폰: 유튜브 창은 보여야 재생됨 */
   #tabs{display:flex;grid-row:3;justify-content:space-around;background:var(--bg);padding:6px 0 env(safe-area-inset-bottom)}
   #tabs a{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;color:var(--dim)}
   #tabs a.on{color:var(--ink)}#tabs a i{font-style:normal;font-size:22px}
   .now img{width:40px;height:40px}.now .like{display:none}
-  .ctl{width:auto}.prog{display:none}.btns{gap:12px}.btns button:not(.big){display:none}
+  .ctl{width:auto}.prog{display:none}.btns{gap:10px}.btns button:not(.big):not(#next){display:none}.btns #next{font-size:20px}
   .btns .big{width:32px;height:32px;background:none;color:#fff;font-size:18px}
   .pad{padding:16px 16px 30px}.h1{font-size:22px}
   .cards{grid-template-columns:repeat(2,1fr);gap:10px}.card{padding:10px}.card .go{display:none}
