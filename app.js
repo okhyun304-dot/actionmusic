@@ -24,6 +24,7 @@ const save = () => { for (const k of ['vol', 'muted', 'shuffle', 'repeat', 'like
 
 /* ══ 데이터 ══ */
 const _m = location.search.match(/albums=(\w+)/); if (_m) document.body.dataset.albums = _m[1];
+const _p = location.search.match(/[?&]p=([^&]+)/); if (_p) history.replaceState(null, '', location.pathname + '#/' + decodeURIComponent(_p[1]).replace(/^\/+/, ''));   // 책의 링크·QR (?p=b/권/꼭지/곡) → 해시 경로
 fetch('data.json').then(r => r.json()).then(d => {
   DATA = d;
   d.books.forEach((b, v) => { b.v = v; b.tracks.forEach((t, k) => { t.v = v; t.k = k; }); b.chapters.forEach((c, ci) => { c.v = v; c.ci = ci; }); });
