@@ -51,7 +51,7 @@ function route() {
   const nav = p[0] || 'home';
   $$('[data-nav]').forEach(a => a.classList.toggle('on', a.dataset.nav === nav));
   $('#q').value = nav === 'search' ? (p[1] || '') : $('#q').value;
-  if (nav === 'b' && p[2]) { const v = +p[1] - 1, k = +p[2] - 1; if (trk(v, k)) return viewTrack(v, k); }
+  if (nav === 'b' && p[2]) { const v = +p[1] - 1, k = +p[2] - 1; if (trk(v, k)) { viewTrack(v, k); if (p[3]) autoPlay(v, k, +p[3] - 1); return; } }
   if (nav === 'b') return viewBook(+p[1] - 1);
   if (nav === 'c') return viewChapter(+p[1] - 1, +p[2] - 1);
   if (nav === 'pl') return viewPlaylist(p[1]);
@@ -412,6 +412,14 @@ function syncLyrics() {
 setInterval(syncLyrics, 500);
 document.addEventListener('mousedown', e => { const b = e.target.closest('.lyrics'); if (b) { b.dataset.hold = '1'; clearTimeout(b._h); b._h = setTimeout(() => delete b.dataset.hold, 4000); } });
 
+/* ══ QR 로 들어왔을 때: 그 곡 바로 재생 (브라우저가 막으면 ▶ 안내) ══ */
+function autoPlay(v, k, si) {
+  const t = trk(v, k); if (!t.music[si] || t.music[si].dead) return;
+  history.replaceState(null, '', `#/b/${book(v).vol}/${pad2(k + 1)}`);
+  const tryPlay = () => { playTrack(v, k, null, si); setTimeout(() => { if (!playing()) toast('▶ 를 누르면 곡이 나옵니다'); }, 2500); };
+  if (ytReady) tryPlay(); else pendingPlay = tryPlay;
+}
+
 /* ══ 재생 ══ */
 function ctxQueue(ctx) {
   let tracks, name;
@@ -487,7 +495,7 @@ function restoreQueue() {
   Q.list = q.list; Q.i = q.i; Q.ctx = q.ctx; Q.orig = q.orig || q.list.slice();
   const t = curTrack(), m = t && t.music[Q.list[Q.i].s]; if (!m) return;
   $('#bar').classList.remove('idle'); $('#now-img').src = `https://i.ytimg.com/vi/${m.vid}/mqdefault.jpg`; $('#now-song').textContent = m.title; $('#now-sub').textContent = `${pad2(Q.i >= 0 ? Q.list[Q.i].t + 1 : 0)} ${t.title} · ${book(t.v).vol}권`;
-  pendingPlay = () => { YTP.cueVideoById({ videoId: m.vid, startSeconds: q.pos || 0 }); };
+  if (!pendingPlay) pendingPlay = () => { YTP.cueVideoById({ videoId: m.vid, startSeconds: q.pos || 0 }); };   // QR 자동재생이 먼저면 그걸 우선
   syncBar();
 }
 setInterval(() => {
