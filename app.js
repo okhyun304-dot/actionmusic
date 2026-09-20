@@ -71,7 +71,7 @@ function libItems() {
   const items = [];
   items.push({ type: 'liked', name: '좋아요 표시한 꼭지', sub: `플레이리스트 · ${S.liked.length}곡`, href: '#/liked', ico: '♥', t: S.libTouched.liked || 0 });
   S.pls.forEach(p => items.push({ type: 'pl', id: p.id, name: p.name, sub: `플레이리스트 · ${p.items.length}곡`, href: '#/pl/' + p.id, ico: '♫', cls: 'pl', t: p.t || 0 }));
-  DATA.books.forEach(b => items.push({ type: 'album', v: b.v, name: b.name, sub: '앨범 · 배준인', href: '#/b/' + b.vol, img: b.cover, t: S.libTouched[key(b.v, 'a')] || 0 }));
+  DATA.books.forEach(b => items.push({ type: 'album', v: b.v, name: b.name, sub: '앨범 · 배준익', href: '#/b/' + b.vol, img: b.cover, t: S.libTouched[key(b.v, 'a')] || 0 }));
   DATA.books.forEach(b => b.chapters.forEach(c => items.push({ type: 'pl', v: b.v, ci: c.ci, name: c.title, sub: `플레이리스트 · ${b.vol}권 ${c.label}`, href: `#/c/${b.vol}/${c.ci + 1}`, img: b.tracks[c.from - 1].thumb, t: S.libTouched[key(b.v, 'c' + c.ci)] || 0 })));
   return items;
 }
@@ -106,7 +106,7 @@ function viewHome() {
       <p class="fintro">${esc(f.intro || '')}</p>
       <div class="fmeta">${f.tracks.length}곡${total ? ' · ' + fmtLong(total) : ''} · ${f.chapters.map(x => esc(x.title)).join(' · ')}</div>
       <div class="fbtns"><button class="playbig" id="fplay">${on ? '❚❚' : '▶'}</button><a class="btn ghost" href="#/b/${f.vol}">앨범 열기</a>${last ? `<a class="btn ghost" href="#/b/${book(last[0]).vol}/${pad2(last[1] + 1)}">이어 읽기 · ${pad2(last[1] + 1)} ${esc(trk(last[0], last[1]).title)}</a>` : ''}</div></div></div>
-    <div class="pad"><div class="h2"><span>행동힙합 1~6권</span><small>배준인</small></div>
+    <div class="pad"><div class="h2"><span>행동힙합 1~6권</span><small>배준익</small></div>
       <div class="albums">${DATA.books.map(b => `<div class="alb${b.v === f.v ? ' on' : ''}" data-go="#/b/${b.vol}" data-ctx="album|${b.v}"><img src="${b.cover}" alt=""><div class="at"><b>${esc(b.name)}</b><small>${esc(b.tag || '')} · ${b.tracks.length}곡</small><p>${esc(b.intro || '')}</p></div><button class="go" data-playctx="album|${b.v}">▶</button></div>`).join('')}</div>
     </div>`;
   $('#fplay').onclick = () => togglePlayCtx({ type: 'album', v: f.v });
@@ -177,12 +177,12 @@ function viewBook(v, k) {
   $('#view').innerHTML = `<div class="sticky" style="--c:${b.color}"><button class="playbig">▶</button><b>${esc(b.name)}</b></div>
     <div class="hero" style="--c:${b.color}"><img class="tall" src="${b.cover}" alt=""><div style="min-width:0">
       <div class="kind">앨범</div><h1>${esc(b.name)}</h1>
-      <div class="meta"><a href="#/artist"><img src="${DATA.books[0].cover}" alt=""><b>배준인</b></a> <span>· ${b.year} · ${b.tracks.length}곡, ${nsong}개 음원${total ? ' · 약 ' + fmtLong(total) : ''}</span></div></div></div>
+      <div class="meta"><a href="#/artist"><img src="${DATA.books[0].cover}" alt=""><b>배준익</b></a> <span>· ${b.year} · ${b.tracks.length}곡, ${nsong}개 음원${total ? ' · 약 ' + fmtLong(total) : ''}</span></div></div></div>
     <div class="under" style="--c:${b.color}">${toolsHtml(ctx, `<button class="ic" id="shufctx" title="셔플 재생">⇄</button><button class="ic" id="morectx" title="더보기">⋯</button>`)}
       <div class="tl-h"><div style="text-align:right">#</div><div>제목</div><div>곡</div><div></div><div style="text-align:right">⏱</div><div></div></div>
       ${trackRows(b.tracks, ctx, { chapters: true })}
-      <div class="foot-info">${b.year} · 행동힙합 ${b.vol}권${b.sub ? ' ' + esc(b.sub) : ''} · 글 배준인 · 엮음 오키<br>ⓒ 배준인. 곡은 유튜브에서 재생됩니다.</div>
-      <div class="h2"><span>배준인의 다른 앨범</span></div><div class="row">${DATA.books.filter(x => x.v !== v).map(cardAlbum).join('')}</div></div>`;
+      <div class="foot-info">${b.year} · 행동힙합 ${b.vol}권${b.sub ? ' ' + esc(b.sub) : ''} · 글 배준익 · 엮음 오키<br>ⓒ 배준익. 곡은 유튜브에서 재생됩니다.</div>
+      <div class="h2"><span>배준익의 다른 앨범</span></div><div class="row">${DATA.books.filter(x => x.v !== v).map(cardAlbum).join('')}</div></div>`;
   $('#playall').onclick = () => togglePlayCtx(ctx);
   $('#shufctx').onclick = () => { S.shuffle = true; save(); syncBar(); playCtx(ctx); };
   $('#morectx').onclick = e => ctxMenu(e, ctxItems(ctx));
@@ -236,15 +236,15 @@ function viewArtist() {
   const top = topTracks(5); const tracks = top.length ? top : DATA.books.flatMap(b => b.tracks.slice(0, 1));
   const ctx = { type: 'album', v: 0 };
   $('#view').innerHTML = `<div class="hero artist" style="--img:url(${DATA.books[0].cover});--c:#222"><div>
-      <div class="kind">아티스트</div><h1>배준인</h1><div class="meta"><span>행동주의자 · ${DATA.books.length}개 앨범 · ${DATA.books.reduce((a, b) => a + b.tracks.length, 0)}곡</span></div></div></div>
+      <div class="kind">아티스트</div><h1>배준익</h1><div class="meta"><span>행동주의자 · ${DATA.books.length}개 앨범 · ${DATA.books.reduce((a, b) => a + b.tracks.length, 0)}곡</span></div></div></div>
     <div class="under" style="--c:#222">${toolsHtml(ctx)}
       <div class="h2"><span>${top.length ? '많이 들은 꼭지' : '인기 꼭지'}</span></div>
       ${trackRows(tracks, { type: 'album', v: 0 }, { numberByIndex: true, showBook: true })}
       <div class="h2"><span>디스코그래피</span></div><div class="row">${DATA.books.map(cardAlbum).join('')}</div>
       <div class="h2"><span>플레이리스트</span></div><div class="row">${DATA.books.flatMap(b => b.chapters.map(c => cardChapter(b, c))).join('')}</div>
       <div class="h2"><span>소개</span></div>
-      <div class="about"><b>행동주의자 배준인 님</b>사업가. 새벽에 일어나 글을 쓰시고, 음악을 들으시고, 텔레그램에 남기신다. 「행동힙합」은 그 글과 음악을 오키가 여섯 권으로 엮은 것이다. 1권 · 2권 · 3권 생존 · 4권 사랑 · 5권 힙합 · 6권 명반.</div></div>`;
-  $('#playall').onclick = () => { const q = tracks.map(t => t.music.map((m, s) => ({ v: t.v, t: t.k, s })).filter((x) => !t.music[x.s].dead)).flat(); startQueue(q, 0, { type: 'artist', name: '배준인' }); };
+      <div class="about"><b>행동주의자 배준익 님</b>사업가. 새벽에 일어나 글을 쓰시고, 음악을 들으시고, 텔레그램에 남기신다. 「행동힙합」은 그 글과 음악을 오키가 여섯 권으로 엮은 것이다. 1권 · 2권 · 3권 생존 · 4권 사랑 · 5권 힙합 · 6권 명반.</div></div>`;
+  $('#playall').onclick = () => { const q = tracks.map(t => t.music.map((m, s) => ({ v: t.v, t: t.k, s })).filter((x) => !t.music[x.s].dead)).flat(); startQueue(q, 0, { type: 'artist', name: '배준익' }); };
   bindRows({ type: 'album', v: 0 }); bindCards();
 }
 
@@ -353,7 +353,7 @@ function openList(ctx) {
   });
   $('#view').innerHTML = `<div class="grid-h" style="--c:${color}">${L.img ? `<img class="${ctx.type === 'album' ? 'tall' : ''}" src="${L.img}" alt="">` : `<div class="ico ${ctx.type === 'pl' ? 'pl' : ''}">${L.ico || '♫'}</div>`}<div style="min-width:0">
       <div class="kind">${ctx.type === 'album' ? '앨범' : '플레이리스트'}</div><h1>${esc(L.name)}</h1>
-      <div class="meta"><b>배준인</b> · ${L.tracks.length}곡${total ? ' · ' + fmtLong(total) : ''}${b && ctx.type === 'album' ? ' · ' + b.year : ''}</div></div></div>
+      <div class="meta"><b>배준익</b> · ${L.tracks.length}곡${total ? ' · ' + fmtLong(total) : ''}${b && ctx.type === 'album' ? ' · ' + b.year : ''}</div></div></div>
     <div class="grid-b" style="--c:${color}"><div class="tools"><button class="playbig" id="playall">${on ? '❚❚' : '▶'}</button><button class="ic${S.shuffle ? ' on' : ''}" id="shufctx" title="셔플">⇄</button><button class="ic" id="morectx" title="더보기">⋯</button></div>
       <div class="gcards">${cards}</div>${L.tracks.length ? '' : '<div class="empty">비어 있습니다. 꼭지의 ⋯ 메뉴에서 "플레이리스트에 추가"를 누르세요.</div>'}</div>`;
   $('#playall').onclick = () => togglePlayCtx(ctx);
