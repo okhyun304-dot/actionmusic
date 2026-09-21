@@ -243,7 +243,7 @@ function viewArtist() {
       <div class="h2"><span>디스코그래피</span></div><div class="row">${DATA.books.map(cardAlbum).join('')}</div>
       <div class="h2"><span>플레이리스트</span></div><div class="row">${DATA.books.flatMap(b => b.chapters.map(c => cardChapter(b, c))).join('')}</div>
       <div class="h2"><span>소개</span></div>
-      <div class="about"><b>행동주의자 배준익 님</b>사업가. 새벽에 일어나 글을 쓰시고, 음악을 들으시고, 텔레그램에 남기신다. 「행동힙합」은 그 글과 음악을 오키가 여섯 권으로 엮은 것이다. 1권 · 2권 · 3권 생존 · 4권 사랑 · 5권 힙합 · 6권 명반.</div></div>`;
+      <div class="about"><b>행동주의자 배준익 님</b>사업가. 새벽에 일어나 글을 쓰시고, 음악을 들으시고, 텔레그램에 남기신다. 「행동힙합」은 그 글과 음악을 오키가 여섯 권으로 엮은 것이다. 1권 태도 · 2권 기억 · 3권 생존 · 4권 사랑 · 5권 힙합 · 6권 명반.</div></div>`;
   $('#playall').onclick = () => { const q = tracks.map(t => t.music.map((m, s) => ({ v: t.v, t: t.k, s })).filter((x) => !t.music[x.s].dead)).flat(); startQueue(q, 0, { type: 'artist', name: '배준익' }); };
   bindRows({ type: 'album', v: 0 }); bindCards();
 }
