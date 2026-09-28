@@ -453,6 +453,40 @@ AUD.addEventListener('ended', () => { if (USE !== 'mp3') return; if (S.repeat ==
 for (const ev of ['play', 'pause']) AUD.addEventListener(ev, () => { if (USE === 'mp3') { syncBar(); markRows(); renderBody(); } });
 AUD.addEventListener('error', () => { if (USE === 'mp3') { USE = 'yt'; const q = cur(); if (q) { const m = trk(q.v, q.t).music[q.s]; if (ytReady) YTP.loadVideoById(m.vid); } } });   // MP3 가 안 되면 유튜브로
 
+/* ══ 잠금화면·알림창 조작 ══ 폰 잠금화면에 앨범 사진·곡명과 이전/재생/다음 버튼을 띄운다 (이어폰 버튼도 여기로 들어온다) */
+function mediaSession(t, m, b) {
+  if (!('mediaSession' in navigator)) return;
+  const img = n => `https://i.ytimg.com/vi/${m.vid}/${n}`;
+  navigator.mediaSession.metadata = new MediaMetadata({
+    title: m.title || '곡',
+    artist: m.artist || `${pad2(t.k + 1)} ${t.title}`,
+    album: `${b.name} · ${pad2(t.k + 1)} ${t.title}`,
+    artwork: [
+      { src: img('mqdefault.jpg'), sizes: '320x180', type: 'image/jpeg' },
+      { src: img('hqdefault.jpg'), sizes: '480x360', type: 'image/jpeg' },
+      { src: 'icon-512.png', sizes: '512x512', type: 'image/png' },
+    ],
+  });
+  for (const [k, f] of [['play', () => P.playVideo()], ['pause', () => P.pauseVideo()],
+                        ['previoustrack', () => { P.getCurrentTime() > 4 ? P.seekTo(0) : step(-1); }],
+                        ['nexttrack', () => step(1)],
+                        ['seekbackward', () => P.seekTo(Math.max(0, P.getCurrentTime() - 10))],
+                        ['seekforward', () => P.seekTo(P.getCurrentTime() + 10)],
+                        ['seekto', (d) => { if (d.seekTime != null) P.seekTo(d.seekTime); }],
+                        ['stop', () => P.pauseVideo()]]) {
+    try { navigator.mediaSession.setActionHandler(k, f); } catch (e) {}
+  }
+}
+function mediaState() {
+  if (!('mediaSession' in navigator)) return;
+  navigator.mediaSession.playbackState = playing() ? 'playing' : (Q.i >= 0 ? 'paused' : 'none');
+  const d = P.getDuration(), c = P.getCurrentTime();                     // 잠금화면 진행바
+  if (d > 0 && isFinite(d) && navigator.mediaSession.setPositionState) {
+    try { navigator.mediaSession.setPositionState({ duration: d, position: Math.min(c, d), playbackRate: 1 }); } catch (e) {}
+  }
+}
+setInterval(mediaState, 1000);
+
 /* ══ 가사 ══ */
 const LYR = {};                                                   // vid → {synced, plain, src}
 async function loadLyrics(vid) { if (LYR[vid]) return LYR[vid]; try { LYR[vid] = await (await fetch(`lyrics/${vid}.json`)).json(); } catch (e) { LYR[vid] = null; } return LYR[vid]; }
@@ -523,6 +557,7 @@ function playCur(seek) {
   renderBody();
   syncBar(); markRows(); renderLib(); persistQueue();
   if (PAGE && (PAGE.v !== q.v || PAGE.k !== q.t)) go(`#/b/${b.vol}/${pad2(q.t + 1)}`);     // 글을 보고 있으면 곡 따라 글도 넘어간다
+  mediaSession(t, m, b);
 }
 function playing() { return pReady() && P.getPlayerState && P.getPlayerState() === 1; }
 function togglePlay() { if (!pReady() || Q.i < 0) return; playing() ? P.pauseVideo() : P.playVideo(); }
@@ -542,6 +577,7 @@ function onState(e) {
 }
 function syncBar() {
   const p = playing(); $('#play').textContent = p ? '❚❚' : '▶';
+  mediaState();
   const vb = document.querySelector('.video'); if (vb) vb.style.display = USE === 'mp3' ? 'none' : '';   // MP3 로 틀 땐 유튜브 창을 숨긴다
   for (const id of ['#shuf']) $(id).classList.toggle('on', S.shuffle);
   for (const id of ['#rep']) { $(id).classList.toggle('on', S.repeat > 0); $(id).classList.toggle('one', S.repeat === 2); }
