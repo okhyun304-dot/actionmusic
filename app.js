@@ -34,7 +34,7 @@ fetch('data.json?v=' + V).then(r => r.json()).then(d => {
 });
 window.onYouTubeIframeAPIReady = () => {
   YTP = new YT.Player('yt', { width: 120, height: 68, videoId: '', playerVars: { rel: 0, modestbranding: 1, playsinline: 1, controls: 0 },
-    events: { onReady: () => { ytReady = true; YTP.setVolume(S.vol); if (S.muted) YTP.mute(); if (pendingPlay) { pendingPlay(); pendingPlay = null; } }, onStateChange: onState } });
+    events: { onReady: () => { ytReady = true; P.setVolume(S.vol); if (S.muted) P.mute(); if (pendingPlay) { pendingPlay(); pendingPlay = null; } }, onStateChange: onState } });
 };
 const book = v => DATA.books[v], trk = (v, k) => DATA.books[v].tracks[k];
 const cur = () => Q.i >= 0 ? Q.list[Q.i] : null;
@@ -414,6 +414,45 @@ function renderList() {
   const sel = $('#rlist .rl.sel'); if (sel) sel.scrollIntoView({ block: 'nearest' });
 }
 
+/* ══ 재생기 ══ 드롭박스에 MP3 가 있으면 그걸로 (광고 없음·영상이 내려가도 재생됨), 없으면 유튜브 */
+const AUD = new Audio(); AUD.preload = 'metadata';
+let USE = 'yt';                                                   // 지금 곡을 무엇으로 트는가
+const mp3Url = vid => (DATA && DATA.mp3base) ? DATA.mp3base + '&preview=' + vid + '.mp3&dl=1' : null;
+const hasMp3 = vid => !!(DATA && DATA.mp3base && DATA.mp3 && DATA.mp3[vid]);
+const pReady = () => USE === 'mp3' ? true : ytReady;
+const P = {
+  getCurrentTime: () => USE === 'mp3' ? (AUD.currentTime || 0) : (ytReady && YTP.getCurrentTime ? YTP.getCurrentTime() : 0),
+  getDuration:    () => USE === 'mp3' ? (isFinite(AUD.duration) ? AUD.duration : 0) : (ytReady && YTP.getDuration ? YTP.getDuration() : 0),
+  getPlayerState: () => USE === 'mp3' ? (AUD.paused ? 2 : 1) : (ytReady && YTP.getPlayerState ? YTP.getPlayerState() : -1),
+  playVideo:  () => USE === 'mp3' ? AUD.play().catch(() => {}) : YTP.playVideo(),
+  pauseVideo: () => USE === 'mp3' ? AUD.pause() : YTP.pauseVideo(),
+  seekTo: (t) => { if (USE === 'mp3') AUD.currentTime = t; else YTP.seekTo(t, true); },
+  setVolume: (v) => { AUD.volume = v / 100; if (ytReady) YTP.setVolume(v); },
+  mute:   () => { AUD.muted = true;  if (ytReady) YTP.mute(); },
+  unMute: () => { AUD.muted = false; if (ytReady) YTP.unMute(); },
+  loadVideoById: (a) => load_(a, true),
+  cueVideoById:  (a) => load_(a, false),
+};
+function load_(a, go) {
+  const vid = typeof a === 'string' ? a : a.videoId, at = (typeof a === 'object' && a.startSeconds) || 0;
+  if (hasMp3(vid)) {
+    USE = 'mp3';
+    if (ytReady) YTP.stopVideo();
+    AUD.src = mp3Url(vid); AUD.volume = S.vol / 100; AUD.muted = !!S.muted;
+    if (at) AUD.currentTime = at;
+    if (go) AUD.play().catch(() => syncBar());
+  } else {
+    USE = 'yt'; AUD.pause(); AUD.removeAttribute('src');
+    if (!ytReady) return;
+    go ? (at ? YTP.loadVideoById({ videoId: vid, startSeconds: at }) : YTP.loadVideoById(vid))
+       : YTP.cueVideoById({ videoId: vid, startSeconds: at });
+  }
+}
+AUD.addEventListener('loadedmetadata', () => { const q = cur(); if (q && USE === 'mp3') { const m = trk(q.v, q.t).music[q.s]; if (!m.dur) m.dur = Math.round(AUD.duration); } });
+AUD.addEventListener('ended', () => { if (USE !== 'mp3') return; if (S.repeat === 2) { AUD.currentTime = 0; AUD.play(); } else step(1); });
+for (const ev of ['play', 'pause']) AUD.addEventListener(ev, () => { if (USE === 'mp3') { syncBar(); markRows(); renderBody(); } });
+AUD.addEventListener('error', () => { if (USE === 'mp3') { USE = 'yt'; const q = cur(); if (q) { const m = trk(q.v, q.t).music[q.s]; if (ytReady) YTP.loadVideoById(m.vid); } } });   // MP3 가 안 되면 유튜브로
+
 /* ══ 가사 ══ */
 const LYR = {};                                                   // vid → {synced, plain, src}
 async function loadLyrics(vid) { if (LYR[vid]) return LYR[vid]; try { LYR[vid] = await (await fetch(`lyrics/${vid}.json`)).json(); } catch (e) { LYR[vid] = null; } return LYR[vid]; }
@@ -426,9 +465,9 @@ async function toggleLyrics(vid) {
   box.hidden = false;
 }
 function syncLyrics() {
-  const q = cur(); if (!q || !ytReady || !YTP.getCurrentTime) return;
+  const q = cur(); if (!q || !pReady() || !P.getCurrentTime) return;
   const m = trk(q.v, q.t).music[q.s]; const box = $(`#ly-${m.vid}`); if (!box || box.hidden) return;
-  const t = YTP.getCurrentTime(); let cur_ = null;
+  const t = P.getCurrentTime(); let cur_ = null;
   box.querySelectorAll('p[data-t]').forEach(p => { if (+p.dataset.t <= t + 0.3) cur_ = p; p.classList.remove('now'); });
   if (cur_) { cur_.classList.add('now'); if (!box.dataset.hold) box.scrollTo({ top: cur_.offsetTop - box.clientHeight / 2 + cur_.offsetHeight / 2, behavior: 'smooth' }); }   // 가사 상자 안에서만 움직인다 — 읽던 글은 그대로
 }
@@ -440,7 +479,7 @@ function autoPlay(v, k, si) {
   const t = trk(v, k); if (!t.music[si] || t.music[si].dead) return;
   history.replaceState(null, '', `#/b/${book(v).vol}/${pad2(k + 1)}`);
   const tryPlay = () => { playTrack(v, k, null, si); setTimeout(() => { if (!playing()) toast('▶ 를 누르면 곡이 나옵니다'); }, 2500); };
-  if (ytReady) tryPlay(); else pendingPlay = tryPlay;
+  if (pReady()) tryPlay(); else pendingPlay = tryPlay;
 }
 
 /* ══ 재생 ══ */
@@ -478,27 +517,27 @@ function playCur(seek) {
   $('#bar').classList.remove('idle');
   $('#now-img').src = `https://i.ytimg.com/vi/${m.vid}/mqdefault.jpg`;
   $('#now-song').textContent = m.title || '곡'; $('#now-sub').textContent = `${pad2(q.t + 1)} ${t.title} · ${b.vol}권`;
-  const run = () => { seek ? YTP.loadVideoById({ videoId: m.vid, startSeconds: seek }) : YTP.loadVideoById(m.vid); };
-  if (ytReady) run(); else pendingPlay = run;
+  const run = () => { seek ? P.loadVideoById({ videoId: m.vid, startSeconds: seek }) : P.loadVideoById(m.vid); };
+  if (pReady()) run(); else pendingPlay = run;
   S.plays[key(q.v, q.t)] = (S.plays[key(q.v, q.t)] || 0) + 1;
   renderBody();
   syncBar(); markRows(); renderLib(); persistQueue();
   if (PAGE && (PAGE.v !== q.v || PAGE.k !== q.t)) go(`#/b/${b.vol}/${pad2(q.t + 1)}`);     // 글을 보고 있으면 곡 따라 글도 넘어간다
 }
-function playing() { return ytReady && YTP.getPlayerState && YTP.getPlayerState() === 1; }
-function togglePlay() { if (!ytReady || Q.i < 0) return; playing() ? YTP.pauseVideo() : YTP.playVideo(); }
+function playing() { return pReady() && P.getPlayerState && P.getPlayerState() === 1; }
+function togglePlay() { if (!pReady() || Q.i < 0) return; playing() ? P.pauseVideo() : P.playVideo(); }
 function step(d) {
   if (!Q.list.length) return;
   let i = Q.i + d;
-  if (i >= Q.list.length) { if (S.repeat === 1 || d === -1) i = 0; else { i = 0; if (d === 1 && S.repeat === 0) { YTP.pauseVideo(); Q.i = 0; playCur(); YTP.pauseVideo(); return; } } }
+  if (i >= Q.list.length) { if (S.repeat === 1 || d === -1) i = 0; else { i = 0; if (d === 1 && S.repeat === 0) { P.pauseVideo(); Q.i = 0; playCur(); P.pauseVideo(); return; } } }
   if (i < 0) i = Q.list.length - 1;
   Q.i = i; playCur();
 }
 function onState(e) {
   const q = cur(); if (!q) return;
   const st = e.data;
-  if (st === YT.PlayerState.PLAYING) { const m = trk(q.v, q.t).music[q.s]; if (!m.dur) m.dur = Math.round(YTP.getDuration()); }
-  if (st === YT.PlayerState.ENDED) { if (S.repeat === 2) { YTP.seekTo(0); YTP.playVideo(); } else step(1); }
+  if (st === YT.PlayerState.PLAYING) { const m = trk(q.v, q.t).music[q.s]; if (!m.dur) m.dur = Math.round(P.getDuration()); }
+  if (st === YT.PlayerState.ENDED) { if (S.repeat === 2) { P.seekTo(0); P.playVideo(); } else step(1); }
   syncBar(); markRows(); renderBody();
 }
 function syncBar() {
@@ -512,39 +551,39 @@ function syncBar() {
 }
 function currentCtxOfPage() { const p = location.hash.replace(/^#\/?/, '').split('/'); if (p[0] === 'b') return { type: 'album', v: +p[1] - 1 }; if (p[0] === 'c') return { type: 'chapter', v: +p[1] - 1, c: +p[2] - 1 }; if (p[0] === 'pl') return { type: 'pl', id: p[1] }; if (p[0] === 'liked') return { type: 'liked' }; return {}; }
 function markRows() { const q = cur(); const p = playing(); const rp = $('#rplay'); if (rp) rp.textContent = LIST && sameCtx(LIST) && p ? '❚❚' : '▶'; $$('.tl, .rl, .gc').forEach(el => { const on = !!q && +el.dataset.v === q.v && +el.dataset.k === q.t; el.classList.toggle('on', on); el.classList.toggle('paused', on && !p); }); }
-function persistQueue() { store('q', { list: Q.list, i: Q.i, ctx: Q.ctx, orig: Q.orig, pos: ytReady && YTP.getCurrentTime ? YTP.getCurrentTime() : 0 }); }
+function persistQueue() { store('q', { list: Q.list, i: Q.i, ctx: Q.ctx, orig: Q.orig, pos: pReady() && P.getCurrentTime ? P.getCurrentTime() : 0 }); }
 function restoreQueue() {
   const q = load('q', null); if (!q || !q.list?.length) return;
   Q.list = q.list; Q.i = q.i; Q.ctx = q.ctx; Q.orig = q.orig || q.list.slice();
   const t = curTrack(), m = t && t.music[Q.list[Q.i].s]; if (!m) return;
   $('#bar').classList.remove('idle'); $('#now-img').src = `https://i.ytimg.com/vi/${m.vid}/mqdefault.jpg`; $('#now-song').textContent = m.title; $('#now-sub').textContent = `${pad2(Q.i >= 0 ? Q.list[Q.i].t + 1 : 0)} ${t.title} · ${book(t.v).vol}권`;
-  if (!pendingPlay) pendingPlay = () => { YTP.cueVideoById({ videoId: m.vid, startSeconds: q.pos || 0 }); };   // QR 자동재생이 먼저면 그걸 우선
+  if (!pendingPlay) pendingPlay = () => { P.cueVideoById({ videoId: m.vid, startSeconds: q.pos || 0 }); };   // QR 자동재생이 먼저면 그걸 우선
   syncBar();
 }
 setInterval(() => {
-  if (!ytReady || Q.i < 0 || !YTP.getDuration) return;
-  const d = YTP.getDuration() || 0, c = YTP.getCurrentTime() || 0; const w = d ? (c / d * 100) + '%' : '0';
+  if (!pReady() || Q.i < 0 || !P.getDuration) return;
+  const d = P.getDuration() || 0, c = P.getCurrentTime() || 0; const w = d ? (c / d * 100) + '%' : '0';
   $('#fill').style.width = w; $('#t0').textContent = fmt(c); $('#t1').textContent = fmt(d);
 }, 500);
 setInterval(persistQueue, 5000);
 
 /* 버튼 */
 $('#play').onclick = togglePlay;
-for (const id of ['#prev']) $(id).onclick = () => { if (ytReady && YTP.getCurrentTime() > 4) YTP.seekTo(0); else step(-1); };
+for (const id of ['#prev']) $(id).onclick = () => { if (pReady() && P.getCurrentTime() > 4) P.seekTo(0); else step(-1); };
 for (const id of ['#next']) $(id).onclick = () => step(1);
 for (const id of ['#shuf']) $(id).onclick = () => { S.shuffle = !S.shuffle; save(); if (Q.list.length) { S.shuffle ? doShuffle() : unShuffle(); renderQueue(); persistQueue(); } syncBar(); const rs = $('#rshuf'); if (rs) rs.classList.toggle('on', S.shuffle); toast(S.shuffle ? '셔플 켜짐' : '셔플 꺼짐'); };
 for (const id of ['#rep']) $(id).onclick = () => { S.repeat = (S.repeat + 1) % 3; save(); syncBar(); toast(['반복 꺼짐', '전체 반복', '한 곡 반복'][S.repeat]); };
-for (const id of ['#track']) $(id).onclick = e => { if (!ytReady || Q.i < 0) return; const r = e.currentTarget.getBoundingClientRect(); YTP.seekTo(YTP.getDuration() * (e.clientX - r.left) / r.width, true); };
-$('#vol').oninput = () => { S.vol = +$('#vol').value; S.muted = false; if (ytReady) { YTP.unMute(); YTP.setVolume(S.vol); } save(); syncBar(); };
-$('#mute').onclick = () => { S.muted = !S.muted; if (ytReady) S.muted ? YTP.mute() : YTP.unMute(); save(); syncBar(); };
+for (const id of ['#track']) $(id).onclick = e => { if (!pReady() || Q.i < 0) return; const r = e.currentTarget.getBoundingClientRect(); P.seekTo(P.getDuration() * (e.clientX - r.left) / r.width, true); };
+$('#vol').oninput = () => { S.vol = +$('#vol').value; S.muted = false; if (pReady()) { P.unMute(); P.setVolume(S.vol); } save(); syncBar(); };
+$('#mute').onclick = () => { S.muted = !S.muted; if (pReady()) S.muted ? P.mute() : P.unMute(); save(); syncBar(); };
 $('#now-like').onclick = () => { const t = curTrack(); if (t) toggleLike(t.v, t.k); };
 $('#now').onclick = e => { if (e.target.closest('.like')) return; const t = curTrack(); if (t) go(`#/b/${book(t.v).vol}/${pad2(t.k + 1)}`); };
 $('#full').onclick = () => { const t = SEL ? trk(SEL.v, SEL.k) : curTrack(); if (t) fullscreen(t); };
 document.addEventListener('keydown', e => {
   if (/input|textarea|select/i.test(e.target.tagName)) { if (e.key === 'Escape') e.target.blur(); return; }
   if (e.code === 'Space') { e.preventDefault(); togglePlay(); }
-  else if (e.key === 'ArrowRight' && ytReady) YTP.seekTo(YTP.getCurrentTime() + 5, true);
-  else if (e.key === 'ArrowLeft' && ytReady) YTP.seekTo(Math.max(0, YTP.getCurrentTime() - 5), true);
+  else if (e.key === 'ArrowRight' && pReady()) P.seekTo(P.getCurrentTime() + 5, true);
+  else if (e.key === 'ArrowLeft' && pReady()) P.seekTo(Math.max(0, P.getCurrentTime() - 5), true);
   else if (e.key === 'n') step(1); else if (e.key === 'p') step(-1); else if (e.key === 'm') $('#mute').click();
   else if (e.key === '/') { e.preventDefault(); $('#q').focus(); }
   else if (e.key === 'Escape') { $('#fs').hidden = true; closeMenu(); }
