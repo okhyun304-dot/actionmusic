@@ -542,6 +542,7 @@ function onState(e) {
 }
 function syncBar() {
   const p = playing(); $('#play').textContent = p ? '❚❚' : '▶';
+  const vb = document.querySelector('.video'); if (vb) vb.style.display = USE === 'mp3' ? 'none' : '';   // MP3 로 틀 땐 유튜브 창을 숨긴다
   for (const id of ['#shuf']) $(id).classList.toggle('on', S.shuffle);
   for (const id of ['#rep']) { $(id).classList.toggle('on', S.repeat > 0); $(id).classList.toggle('one', S.repeat === 2); }
   const t = curTrack(); $('#now-like').textContent = t && liked(t.v, t.k) ? '♥' : '♡'; $('#now-like').classList.toggle('on', !!(t && liked(t.v, t.k)));
