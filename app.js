@@ -107,12 +107,33 @@ function viewHome() {
       <p class="fintro">${esc(f.intro || '')}</p>
       <div class="fmeta">${f.tracks.length}곡${total ? ' · ' + fmtLong(total) : ''} · ${f.chapters.map(x => esc(x.title)).join(' · ')}</div>
       <div class="fbtns"><button class="playbig" id="fplay">${on ? '❚❚' : '▶'}</button><a class="btn ghost" href="#/b/${f.vol}">앨범 열기</a>${last ? `<a class="btn ghost" href="#/b/${book(last[0]).vol}/${pad2(last[1] + 1)}">이어 읽기 · ${pad2(last[1] + 1)} ${esc(trk(last[0], last[1]).title)}</a>` : ''}</div></div></div>
-    <div class="pad"><div class="h2"><span>행동힙합 1~6권</span><small>배준익</small></div>
+    <div class="pad">${todayHtml()}
+      <div class="h2"><span>행동힙합 1~6권</span><small>배준익</small></div>
       <div class="albums">${DATA.books.map(b => `<div class="alb${b.v === f.v ? ' on' : ''}" data-go="#/b/${b.vol}" data-ctx="album|${b.v}"><img src="${b.cover}" alt=""><div class="at"><b>${esc(b.name)}</b><small>${esc(b.tag || '')} · ${b.tracks.length}곡</small><p>${esc(b.intro || '')}</p></div><button class="go" data-playctx="album|${b.v}">▶</button></div>`).join('')}</div>
     </div>`;
   $('#fplay').onclick = () => togglePlayCtx({ type: 'album', v: f.v });
   bindCards();
 }
+/* ══ 오늘의 글 ══ */
+function todayTrack() {
+  const all = DATA.books.flatMap(b => b.tracks);
+  const d = new Date(); const key = d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
+  let h = key; h = (h ^ 0x5f3a) * 2654435761 % 2147483647;        // 날짜 → 고정된 번호 (같은 날엔 같은 글)
+  return all[Math.abs(h) % all.length];
+}
+function todayHtml() {
+  const t = todayTrack(); if (!t) return '';
+  const b = book(t.v); const m = t.music[0];
+  const d = new Date(); const day = `${d.getMonth() + 1}월 ${d.getDate()}일`;
+  const txt = (t.plain || '').replace(/\s+/g, ' ').trim().slice(0, 90);
+  return `<div class="h2"><span>오늘의 글</span><small>${day}</small></div>
+    <div class="today" data-go="#/b/${b.vol}/${pad2(t.k + 1)}">
+      <img src="${t.thumb}" alt="">
+      <div class="tdx"><b>${esc(t.title)}</b><p>${esc(txt)}…</p>
+        <small>${esc(b.name)} · ${pad2(t.k + 1)}${m ? ' · ♪ ' + esc(m.title) : ''}</small></div>
+      <button class="go" data-play="${t.v},${t.k}">▶</button></div>`;
+}
+
 const cardAlbum = b => `<div class="card" data-go="#/b/${b.vol}" data-ctx="album|${b.v}"><img class="cv tall" src="${b.cover}" alt=""><div class="ct">${esc(b.name)}</div><div class="cs">${b.year} · 앨범 · ${b.tracks.length}곡</div><button class="go" data-playctx="album|${b.v}">▶</button></div>`;
 const cardChapter = (b, c) => `<div class="card" data-go="#/c/${b.vol}/${c.ci + 1}" data-ctx="chapter|${b.v}|${c.ci}"><img class="cv" src="${b.tracks[c.from - 1].thumb}" alt=""><div class="ct">${esc(c.title)}</div><div class="cs">${b.vol}권 ${esc(c.label)} · ${c.n}곡</div><button class="go" data-playctx="chapter|${b.v}|${c.ci}">▶</button></div>`;
 const cardTrack = t => `<div class="card" data-go="#/b/${book(t.v).vol}/${pad2(t.k + 1)}"><img class="cv" src="${t.thumb}" alt=""><div class="ct">${esc(t.title)}</div><div class="cs">${book(t.v).vol}권 ${pad2(t.k + 1)} · ${esc(t.music[0]?.title || '')}</div><button class="go" data-play="${t.v},${t.k}">▶</button></div>`;

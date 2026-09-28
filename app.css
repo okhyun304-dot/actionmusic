@@ -304,6 +304,7 @@ img{display:block}
 .rl small{display:block;font-size:11px;color:var(--faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rl .d{font-size:11px;text-align:right;font-variant-numeric:tabular-nums}
 .rl.dead b{color:#666}
+@media (max-width:1240px){#app{grid-template-columns:var(--side) 1fr}#right{display:none}}   /* 오른쪽 목록을 먼저 접는다 — 안 그러면 가운데가 짜부라져 제목이 세로로 늘어짐 */
 @media (max-width:900px){#app{grid-template-columns:1fr}#right{display:none}}
 
 /* ── 앨범 격자 (가운데) ── */
@@ -377,3 +378,15 @@ body[data-albums=row] .alb{padding:10px}body[data-albums=row] .alb b{font-size:1
   .now img{width:40px;height:40px}.now-t b{font-size:13px}.now-t small{font-size:11px}
 }
 #bar.idle .video{visibility:hidden}   /* 재생 전엔 유튜브 칸 숨김 */
+
+/* 오늘의 글 (홈) */
+.today{display:flex;gap:16px;align-items:center;background:var(--panel2);border-radius:10px;padding:14px;cursor:pointer;position:relative;transition:background .15s}
+.today:hover{background:var(--hover)}
+.today>img{width:120px;height:78px;object-fit:cover;object-position:center top;border-radius:6px;flex:none;background:#333}
+.today .tdx{min-width:0;flex:1}
+.today .tdx b{display:block;font-size:17px;font-weight:700;line-height:1.3;margin-bottom:5px}
+.today .tdx p{margin:0 0 6px;color:var(--dim);font-size:13px;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.today .tdx small{color:var(--faint);font-size:12px}
+.today .go{position:absolute;right:16px;bottom:16px;width:40px;height:40px;border-radius:50%;background:var(--acc);color:#000;display:flex;align-items:center;justify-content:center;opacity:0;transition:.15s}
+.today:hover .go{opacity:1}
+@media (max-width:900px){.today{padding:10px;gap:12px}.today>img{width:92px;height:62px}.today .tdx b{font-size:15px}.today .go{display:none}}
