@@ -595,6 +595,7 @@ function restoreQueue() {
   const t = curTrack(), m = t && t.music[Q.list[Q.i].s]; if (!m) return;
   $('#bar').classList.remove('idle'); $('#now-img').src = `https://i.ytimg.com/vi/${m.vid}/mqdefault.jpg`; $('#now-song').textContent = m.title; $('#now-sub').textContent = `${pad2(Q.i >= 0 ? Q.list[Q.i].t + 1 : 0)} ${t.title} · ${book(t.v).vol}권`;
   if (!pendingPlay) pendingPlay = () => { P.cueVideoById({ videoId: m.vid, startSeconds: q.pos || 0 }); };   // QR 자동재생이 먼저면 그걸 우선
+  mediaSession(t, m, book(t.v));                                    // 앱을 다시 열었을 때도 잠금화면에 곡이 뜨게
   syncBar();
 }
 setInterval(() => {
