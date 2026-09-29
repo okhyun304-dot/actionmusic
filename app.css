@@ -409,3 +409,10 @@ body[data-albums=row] .alb{padding:10px}body[data-albums=row] .alb b{font-size:1
 .tl .ti small .sg{display:none}
 .tl .ti small .sg i{font-style:normal;color:#777}
 @media (max-width:900px){.tl .ti small .ch{display:none}.tl .ti small .sg{display:inline}}
+
+/* 홈 소개 — 첫 문장은 크게, 나머지는 문단으로 */
+.ihero .itx{max-width:660px}
+.ihero .ilead{font-size:20px;line-height:1.6;color:#fff;font-weight:700;letter-spacing:-.02em;margin:0 0 18px}
+.ihero p{margin:0 0 14px}
+.ihero .imeta{margin-top:18px}
+@media (max-width:900px){.ihero .ilead{font-size:17px;margin-bottom:14px}.ihero p{margin:0 0 12px}}

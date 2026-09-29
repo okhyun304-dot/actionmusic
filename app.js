@@ -124,11 +124,13 @@ function introHtml() {
   return `<div class="ihero">
     <img class="imark" src="icon-512.png" alt="">
     <div class="itx">
-      <div class="ftag">행동주의자 배준익</div>
+      <div class="ftag">행동주의자 배준익님의 글과 음악</div>
       <h1>행동힙합</h1>
-      <p>새벽에 일어나 음악을 들으시고, 그 음악과 함께 떠오른 생각을 그날그날 적어 남기셨다.
-         그 글과 곡을 오키가 여섯 권으로 엮었다. 글을 읽으며 그날의 음악을 함께 들을 수 있다.</p>
-      <div class="imeta">여섯 권 · ${nt}편 · ${ns}곡${dur ? ' · ' + fmtLong(dur) : ''}</div>
+      <p class="ilead">한 사람이 살아남아온 시간에는<br>그 시간을 함께한 음악이 있다.</p>
+      <p>행동주의자 배준익님이 20대부터 지금까지<br>사업하고, 사랑하고, 잃고, 견디고, 다시 일어서며 들어온 음악들.</p>
+      <p>가족과 사랑, 이별과 그리움,<br>사업과 실패, 고통과 생존.<br>그때 들었던 음악과 그 안에 남은 생각과 감정을 글로 기록했다.</p>
+      <p>『행동힙합』은 그 글과 음악을 여섯 권으로 엮은 기록이다.<br>음악을 들으며 한 사람이 지나온 시간을 함께 읽을 수 있다.</p>
+      <div class="imeta">${DATA.books.length}권 · ${nt}편 · ${ns}곡${dur ? ' · ' + fmtLong(dur) : ''}</div>
       <div class="fbtns"><a class="btn" href="#/artist">지은이</a><a class="btn ghost" href="#/search">여섯 권 둘러보기</a></div>
     </div></div>`;
 }
