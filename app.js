@@ -337,7 +337,20 @@ function shade(hex, i) { const n = parseInt(hex.slice(1), 16); const f = 0.75 + 
 
 /* ══ 폰 라이브러리 ══ */
 function viewLibMobile() {
-  $('#view').innerHTML = `<div class="pad"><div class="h1">내 라이브러리</div><div class="tiles">${libItems().map(i => `<div class="tile" data-go="${i.href}">${i.img ? `<img src="${i.img}" alt="">` : `<span class="ico">${i.ico}</span>`}<span>${esc(i.name)}<br><small style="color:#b3b3b3;font-weight:400">${esc(i.sub)}</small></span></div>`).join('')}</div></div>`;
+  const all = libItems();
+  const albums = all.filter(i => i.type === 'album');
+  const mine = all.filter(i => i.type === 'liked' || (i.type === 'pl' && i.id));
+  const chaps = all.filter(i => i.type === 'pl' && i.ci != null);
+  const tile = i => `<div class="tile" data-go="${i.href}">${i.img ? `<img src="${i.img}" alt="">` : `<span class="ico">${i.ico}</span>`}<span>${esc(i.name)}<br><small style="color:#b3b3b3;font-weight:400">${esc(i.sub)}</small></span></div>`;
+  const sec = (t, list, sub) => !list.length ? '' : `<div class="h2"><span>${esc(t)}</span>${sub ? `<small>${esc(sub)}</small>` : ''}</div><div class="tiles">${list.map(tile).join('')}</div>`;
+  let html = `<div class="h1">내 라이브러리</div>`;
+  html += sec('앨범', albums, `${albums.length}권`);
+  html += sec('내가 담은 것', mine);
+  for (const b of DATA.books) {                                   // 장은 권별로 묶는다 — 한 줄로 쭉 늘어놓으면 구분이 안 된다
+    const g = chaps.filter(i => i.v === b.v);
+    html += sec(esc(b.name), g, `장 ${g.length}개`);
+  }
+  $('#view').innerHTML = `<div class="pad">${html}</div>`;
   bindCards();
 }
 
