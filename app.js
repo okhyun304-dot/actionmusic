@@ -74,14 +74,6 @@ function route() {
 $('#back').onclick = () => history.back(); $('#fwd').onclick = () => history.forward();
 let qTimer; $('#q').addEventListener('input', () => { clearTimeout(qTimer); qTimer = setTimeout(() => go('#/search/' + encodeURIComponent($('#q').value.trim())), 250); });
 $('#mback').onclick = () => history.back();
-$('#nowlist').onclick = () => {                                   // 재생 바의 목록 버튼 — 목록 ↔ 읽던 글 을 오간다
-  const q = cur(); if (!q) return toast('재생 중인 곡이 없습니다');
-  const art = `#/b/${book(q.v).vol}/${pad2(q.t + 1)}`;
-  const c = Q.ctx || {};
-  const list = c.type === 'chapter' ? `#/c/${book(q.v).vol}/${c.c + 1}` : c.type === 'pl' ? `#/pl/${c.id}` : c.type === 'liked' ? '#/liked' : `#/b/${book(q.v).vol}`;
-  if (location.hash === list) { go(art); return; }               // 목록에 있으면 글로 되돌아간다
-  SCROLL_CUR = true; go(list);
-};
 $('#q').addEventListener('focus', () => { if (!location.hash.startsWith('#/search')) go('#/search'); });
 
 /* ══ 왼쪽 라이브러리 ══ */
@@ -209,7 +201,7 @@ function trackRows(tracks, ctx, opts = {}) {
 }
 function scrollToCur() {
   if (!SCROLL_CUR) return; SCROLL_CUR = false;
-  requestAnimationFrame(() => { const el = $('#main .tl.on, #main .gc.on'); if (el) el.scrollIntoView({ block: 'center' }); });
+  requestAnimationFrame(() => { const el = $('#main .tl.sel, #main .tl.on, #main .gc.on'); if (el) el.scrollIntoView({ block: 'center' }); });
 }
 function bindRows(ctx) {
   scrollToCur();
@@ -411,6 +403,7 @@ function viewTrack(v, k) {
     const q = cur(); const s_ = +el.dataset.s;
     if (q && q.v === v && q.t === k && q.s === s_) togglePlay(); else playTrack(v, k, null, s_);   // 듣던 곡을 다시 누르면 멈춤
   });
+  R.querySelectorAll('.crumb a').forEach(a => a.onclick = () => { SCROLL_CUR = true; });   // 목록으로 갈 땐 이 글 자리로
   R.querySelector('[data-act=play]').onclick = () => { const q = cur(); if (q && q.v === v && q.t === k) togglePlay(); else playTrack(v, k); };
   R.querySelector('[data-act=like]').onclick = () => toggleLike(v, k);
   R.querySelector('[data-act=fs]').onclick = () => fullscreen(t);

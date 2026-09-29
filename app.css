@@ -241,7 +241,7 @@ img{display:block}
   #tabs a{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;color:var(--dim)}
   #tabs a.on{color:var(--ink)}#tabs a i{font-style:normal;font-size:22px}
   .now img{width:40px;height:40px}.now .like{display:none}
-  .ctl{width:auto}.prog{display:none}.btns{gap:10px}.btns button:not(.big):not(#next):not(#nowlist){display:none}.btns #next{font-size:20px}
+  .ctl{width:auto}.prog{display:none}.btns{gap:10px}.btns button:not(.big):not(#next){display:none}.btns #next{font-size:20px}
   .btns .big{width:32px;height:32px;background:none;color:#fff;font-size:18px}
   .pad{padding:16px 16px 30px}.h1{font-size:22px}
   .cards{grid-template-columns:repeat(2,1fr);gap:10px}.card{padding:10px}.card .go{display:none}
@@ -445,9 +445,8 @@ body[data-albums=row] .alb{padding:10px}body[data-albums=row] .alb b{font-size:1
 
 @media (max-width:900px){.msbox{margin-left:46px}}   /* 왼쪽 위 뒤로 버튼 자리를 비워 둔다 */
 
-/* 재생 바의 목록 버튼 */
-#nowlist{display:none}
-@media (max-width:900px){
-  #nowlist{display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;color:#fff;font-size:17px;flex:none}
-  #nowlist:active{background:#ffffff22}
 }
+
+/* 글 맨 위 앨범·장 링크는 목록으로 가는 길이라 눈에 띄게 */
+.tp .crumb a{color:var(--dim);text-decoration:underline;text-underline-offset:3px;text-decoration-color:#555}
+.tp .crumb a:hover{color:#fff;text-decoration-color:#fff}
