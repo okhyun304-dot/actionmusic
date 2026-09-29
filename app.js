@@ -49,7 +49,13 @@ const go = h => { location.hash = h; };
 function route() {
   if (!DATA) return;
   const p = location.hash.replace(/^#\/?/, '').split('/').filter(Boolean).map(decodeURIComponent);
-  $('#main').scrollTop = 0; PAGE = null;
+  { const M = $('#main');                                         // 보던 자리를 기억했다가 되돌아오면 그 자리로 (맨 위로 튕기지 않게)
+    if (PREV_HASH !== null) SCROLLPOS[PREV_HASH] = M.scrollTop;
+    M.scrollTop = 0;
+    const want = SCROLLPOS[location.hash] || 0;
+    if (want) requestAnimationFrame(() => { M.scrollTop = want; });
+    PREV_HASH = location.hash; }
+  PAGE = null;
   { const b = $('#mback'); const h = location.hash || '#/';
     b && (b.hidden = ['#', '#/', '#/search', '#/lib'].includes(h)); }   // 아래 탭으로 갈 수 있는 화면에선 뒤로가 필요 없다
   const nav = p[0] || 'home';
@@ -344,6 +350,7 @@ function viewSearch(q, tab) {
   $('#view').innerHTML = `<div class="pad">${mbox}${body}</div>`; bindSearchBox(q); bindCards();
   $$('.hit').forEach(el => { const v = +el.dataset.v, k = +el.dataset.k; el.onclick = e => { if (e.target.closest('.go')) return; go(`#/b/${book(v).vol}/${pad2(k + 1)}`); }; el.oncontextmenu = e => { e.preventDefault(); ctxMenu(e, ctxItems({ type: 'track', v, k })); }; });
 }
+let PREV_HASH = null, SCROLLPOS = {};
 let SCROLL_CUR = false;                                           // 목록을 열 때 듣던 곡 자리로 내려준다
 let MQ_FOCUS = false;                                             // 글자를 칠 때마다 화면을 다시 그리므로 커서를 되돌려 준다
 function bindSearchBox(q) {
