@@ -468,6 +468,7 @@ function renderList() {
 /* ══ 재생기 ══ 드롭박스에 MP3 가 있으면 그걸로 (광고 없음·영상이 내려가도 재생됨), 없으면 유튜브 */
 const AUD = new Audio(); AUD.preload = 'metadata';
 let USE = 'yt';                                                   // 지금 곡을 무엇으로 트는가
+document.addEventListener('DOMContentLoaded', () => { const vb = document.querySelector('.video'); if (vb) vb.style.display = 'none'; });
 const mp3Url = vid => (DATA && DATA.mp3base) ? DATA.mp3base + '&preview=' + vid + '.mp3&dl=1' : null;
 const hasMp3 = vid => !!(DATA && DATA.mp3base && DATA.mp3 && DATA.mp3[vid]);
 const pReady = () => USE === 'mp3' ? true : ytReady;
@@ -486,14 +487,17 @@ const P = {
 };
 function load_(a, go) {
   const vid = typeof a === 'string' ? a : a.videoId, at = (typeof a === 'object' && a.startSeconds) || 0;
+  const vb = document.querySelector('.video');
   if (hasMp3(vid)) {
     USE = 'mp3';
     if (ytReady) YTP.stopVideo();
     AUD.src = mp3Url(vid); AUD.volume = S.vol / 100; AUD.muted = !!S.muted;
     if (at) AUD.currentTime = at;
+    if (vb) vb.style.display = 'none';                             // MP3 로 트는 동안엔 유튜브 창이 필요 없다
     if (go) AUD.play().catch(() => syncBar());
   } else {
     USE = 'yt'; AUD.pause(); AUD.removeAttribute('src');
+    if (vb) vb.style.display = '';
     if (!ytReady) return;
     go ? (at ? YTP.loadVideoById({ videoId: vid, startSeconds: at }) : YTP.loadVideoById(vid))
        : YTP.cueVideoById({ videoId: vid, startSeconds: at });
