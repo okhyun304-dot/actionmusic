@@ -416,3 +416,6 @@ body[data-albums=row] .alb{padding:10px}body[data-albums=row] .alb b{font-size:1
 .ihero p{margin:0 0 14px}
 .ihero .imeta{margin-top:18px}
 @media (max-width:900px){.ihero .ilead{font-size:17px;margin-bottom:14px}.ihero p{margin:0 0 12px}}
+
+/* 폰에선 아이콘 그림을 빼고 글부터 보이게 (오키) */
+@media (max-width:900px){.ihero .imark{display:none}.ihero{padding-top:20px}}
