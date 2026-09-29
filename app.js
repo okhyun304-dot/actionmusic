@@ -74,11 +74,13 @@ function route() {
 $('#back').onclick = () => history.back(); $('#fwd').onclick = () => history.forward();
 let qTimer; $('#q').addEventListener('input', () => { clearTimeout(qTimer); qTimer = setTimeout(() => go('#/search/' + encodeURIComponent($('#q').value.trim())), 250); });
 $('#mback').onclick = () => history.back();
-$('#nowlist').onclick = () => {                                   // 재생 바의 목록 버튼
+$('#nowlist').onclick = () => {                                   // 재생 바의 목록 버튼 — 목록 ↔ 읽던 글 을 오간다
   const q = cur(); if (!q) return toast('재생 중인 곡이 없습니다');
-  SCROLL_CUR = true;
+  const art = `#/b/${book(q.v).vol}/${pad2(q.t + 1)}`;
   const c = Q.ctx || {};
-  go(c.type === 'chapter' ? `#/c/${book(q.v).vol}/${c.c + 1}` : c.type === 'pl' ? `#/pl/${c.id}` : c.type === 'liked' ? '#/liked' : `#/b/${book(q.v).vol}`);
+  const list = c.type === 'chapter' ? `#/c/${book(q.v).vol}/${c.c + 1}` : c.type === 'pl' ? `#/pl/${c.id}` : c.type === 'liked' ? '#/liked' : `#/b/${book(q.v).vol}`;
+  if (location.hash === list) { go(art); return; }               // 목록에 있으면 글로 되돌아간다
+  SCROLL_CUR = true; go(list);
 };
 $('#q').addEventListener('focus', () => { if (!location.hash.startsWith('#/search')) go('#/search'); });
 
