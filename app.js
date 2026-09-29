@@ -102,6 +102,8 @@ function viewHome() {
   const total = f.tracks.reduce((a, t) => a + trackDur(t), 0);
   const on = Q.ctx && Q.ctx.type === 'album' && Q.ctx.v === f.v && playing();
   $('#view').innerHTML = `
+    ${introHtml()}
+    <div class="pad" style="padding-bottom:0"><div class="h2"><span>${c ? '듣는 중' : last ? '이어서' : '먼저 읽어보기'}</span></div></div>
     <div class="feat" style="--c:${f.color}"><img class="fcv" src="${f.cover}" alt=""><div class="ftx">
       <div class="ftag">${esc(f.tag || '앨범')}</div><h1>${esc(f.name)}</h1>
       <p class="fintro">${esc(f.intro || '')}</p>
@@ -114,6 +116,23 @@ function viewHome() {
   $('#fplay').onclick = () => togglePlayCtx({ type: 'album', v: f.v });
   bindCards();
 }
+/* ══ 홈 맨 위 소개 ══ 늘 같은 자리에 같은 것이 뜬다. 아래 앨범 칸은 듣던·읽던 권에 따라 바뀐다. */
+function introHtml() {
+  const nt = DATA.books.reduce((a, b) => a + b.tracks.length, 0);
+  const ns = DATA.books.reduce((a, b) => a + b.tracks.reduce((x, t) => x + t.music.length, 0), 0);
+  const dur = DATA.books.reduce((a, b) => a + b.tracks.reduce((x, t) => x + trackDur(t), 0), 0);
+  return `<div class="ihero">
+    <img class="imark" src="icon-512.png" alt="">
+    <div class="itx">
+      <div class="ftag">행동주의자 배준익</div>
+      <h1>행동힙합</h1>
+      <p>새벽에 일어나 음악을 들으시고, 그 음악과 함께 떠오른 생각을 그날그날 적어 남기셨다.
+         그 글과 곡을 오키가 여섯 권으로 엮었다. 글을 읽으며 그날의 음악을 함께 들을 수 있다.</p>
+      <div class="imeta">여섯 권 · ${nt}편 · ${ns}곡${dur ? ' · ' + fmtLong(dur) : ''}</div>
+      <div class="fbtns"><a class="btn" href="#/artist">지은이</a><a class="btn ghost" href="#/search">여섯 권 둘러보기</a></div>
+    </div></div>`;
+}
+
 /* ══ 오늘의 글 ══ */
 function todayTrack() {
   const all = DATA.books.flatMap(b => b.tracks);
