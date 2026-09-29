@@ -432,3 +432,13 @@ body[data-albums=row] .alb{padding:10px}body[data-albums=row] .alb b{font-size:1
     box-shadow:0 2px 10px rgba(0,0,0,.5)}
   .tp,.hero,.grid-h{padding-top:56px}       /* 뒤로 버튼에 제목이 가리지 않게 */
 }
+
+/* 폰 검색 입력칸 (PC 는 위쪽 줄의 검색을 쓴다) */
+.msbox{display:none}
+@media (max-width:900px){
+  .msbox{display:flex;align-items:center;gap:10px;background:#ffffff14;border-radius:24px;padding:0 14px;height:46px;margin:0 0 18px;color:var(--dim)}
+  .msbox:focus-within{outline:2px solid #fff;color:var(--ink)}
+  .msbox input{flex:1;min-width:0;background:none;border:0;color:var(--ink);font-size:16px;outline:none}
+  .msbox input::placeholder{color:var(--faint)}
+  .msbox button{width:26px;height:26px;border-radius:50%;background:#ffffff22;color:#fff;font-size:13px;flex:none}
+}

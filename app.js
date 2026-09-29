@@ -300,12 +300,13 @@ function viewArtist() {
 /* ══ 검색 ══ */
 function viewSearch(q, tab) {
   const s = q.trim().toLowerCase();
+  const mbox = `<div class="msbox"><span>⌕</span><input id="mq" value="${esc(q)}" placeholder="글·곡·가수 찾기" autocomplete="off" enterkeyhint="search">${q ? '<button id="mqx" title="지우기">✕</button>' : ''}</div>`;
   if (!s) {
-    $('#view').innerHTML = `<div class="pad"><div class="h1">모두 둘러보기</div><div class="genres">
+    $('#view').innerHTML = `<div class="pad">${mbox}<div class="h1">모두 둘러보기</div><div class="genres">
       ${DATA.books.map(b => `<div class="genre" style="--c:${b.color}" data-go="#/b/${b.vol}">${b.vol}권 ${esc(b.sub) || '행동힙합'}<small>${b.tracks.length}곡</small><img src="${b.cover}" alt=""></div>`).join('')}
       ${DATA.books.flatMap(b => b.chapters.map(c => `<div class="genre" style="--c:${shade(b.color, c.ci)}" data-go="#/c/${b.vol}/${c.ci + 1}">${esc(c.title)}<small>${b.vol}권 ${esc(c.label)} · ${c.n}곡</small><img src="${b.tracks[c.from - 1].thumb}" alt=""></div>`)).join('')}
       <div class="genre" style="--c:#4b3f8f" data-go="#/liked">좋아요<small>${S.liked.length}곡</small></div></div></div>`;
-    bindCards(); return;
+    bindSearchBox(q); bindCards(); return;
   }
   const hl = t => esc(t).replace(new RegExp(s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'ig'), m => `<mark>${m}</mark>`);
   const tracks = [], songs = [];
@@ -328,9 +329,18 @@ function viewSearch(q, tab) {
   } else if (tab === 'tracks') body += tracks.map(({ t }) => hitTrack(t, hl)).join('') || '<div class="empty">없음</div>';
   else if (tab === 'songs') body += songs.map(({ t, m }) => hitSong(t, m, hl)).join('') || '<div class="empty">없음</div>';
   else body += `<div class="row">${albums.map(cardAlbum).join('')}${chs.map(({ b, c }) => cardChapter(b, c)).join('')}</div>` || '<div class="empty">없음</div>';
-  $('#view').innerHTML = `<div class="pad">${body}</div>`; bindCards();
+  $('#view').innerHTML = `<div class="pad">${mbox}${body}</div>`; bindSearchBox(q); bindCards();
   $$('.hit').forEach(el => { const v = +el.dataset.v, k = +el.dataset.k; el.onclick = e => { if (e.target.closest('.go')) return; go(`#/b/${book(v).vol}/${pad2(k + 1)}`); }; el.oncontextmenu = e => { e.preventDefault(); ctxMenu(e, ctxItems({ type: 'track', v, k })); }; });
 }
+let MQ_FOCUS = false;                                             // 글자를 칠 때마다 화면을 다시 그리므로 커서를 되돌려 준다
+function bindSearchBox(q) {
+  const el = $('#mq'); if (!el) return;
+  el.oninput = () => { MQ_FOCUS = true; clearTimeout(el._t); el._t = setTimeout(() => go('#/search/' + encodeURIComponent(el.value)), 280); };
+  el.onkeydown = e => { if (e.key === 'Enter') { clearTimeout(el._t); MQ_FOCUS = true; go('#/search/' + encodeURIComponent(el.value)); el.blur(); } };
+  const x = $('#mqx'); if (x) x.onclick = () => { MQ_FOCUS = true; go('#/search'); };
+  if (MQ_FOCUS) { el.focus(); el.setSelectionRange(el.value.length, el.value.length); }
+}
+
 const hitTrack = (t, hl) => `<div class="hit" data-v="${t.v}" data-k="${t.k}"><img src="${t.thumb}" alt=""><span style="min-width:0"><b>${hl(t.title)}</b><small>꼭지 · ${book(t.v).vol}권 ${pad2(t.k + 1)}${t.music[0] ? ' · ♪ ' + hl(songTxt(t.music[0])) : ''}</small></span><button class="go tile-go" data-play="${t.v},${t.k}" style="margin-left:auto;background:none;color:#fff;font-size:16px">▶</button></div>`;
 const hitSong = (t, m, hl) => `<div class="hit" data-v="${t.v}" data-k="${t.k}"><img src="https://i.ytimg.com/vi/${m.vid}/mqdefault.jpg" alt=""><span style="min-width:0"><b>${hl(songTxt(m))}</b><small>꼭지 · ${esc(t.title)}</small></span></div>`;
 function shade(hex, i) { const n = parseInt(hex.slice(1), 16); const f = 0.75 + (i % 4) * 0.12; const c = x => Math.min(255, Math.round(x * f)); return `rgb(${c(n >> 16)},${c(n >> 8 & 255)},${c(n & 255)})`; }
