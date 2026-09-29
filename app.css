@@ -442,3 +442,5 @@ body[data-albums=row] .alb{padding:10px}body[data-albums=row] .alb b{font-size:1
   .msbox input::placeholder{color:var(--faint)}
   .msbox button{width:26px;height:26px;border-radius:50%;background:#ffffff22;color:#fff;font-size:13px;flex:none}
 }
+
+@media (max-width:900px){.msbox{margin-left:46px}}   /* 왼쪽 위 뒤로 버튼 자리를 비워 둔다 */

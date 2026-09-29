@@ -50,7 +50,8 @@ function route() {
   if (!DATA) return;
   const p = location.hash.replace(/^#\/?/, '').split('/').filter(Boolean).map(decodeURIComponent);
   $('#main').scrollTop = 0; PAGE = null;
-  { const b = $('#mback'); if (b) b.hidden = !location.hash || location.hash === '#/' || location.hash === '#'; }
+  { const b = $('#mback'); const h = location.hash || '#/';
+    b && (b.hidden = ['#', '#/', '#/search', '#/lib'].includes(h)); }   // 아래 탭으로 갈 수 있는 화면에선 뒤로가 필요 없다
   const nav = p[0] || 'home';
   $$('[data-nav]').forEach(a => a.classList.toggle('on', a.dataset.nav === nav));
   $('#q').value = nav === 'search' ? (p[1] || '') : $('#q').value;
