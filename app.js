@@ -50,6 +50,7 @@ function route() {
   if (!DATA) return;
   const p = location.hash.replace(/^#\/?/, '').split('/').filter(Boolean).map(decodeURIComponent);
   $('#main').scrollTop = 0; PAGE = null;
+  { const b = $('#mback'); if (b) b.hidden = !location.hash || location.hash === '#/' || location.hash === '#'; }
   const nav = p[0] || 'home';
   $$('[data-nav]').forEach(a => a.classList.toggle('on', a.dataset.nav === nav));
   $('#q').value = nav === 'search' ? (p[1] || '') : $('#q').value;
@@ -65,6 +66,7 @@ function route() {
 }
 $('#back').onclick = () => history.back(); $('#fwd').onclick = () => history.forward();
 let qTimer; $('#q').addEventListener('input', () => { clearTimeout(qTimer); qTimer = setTimeout(() => go('#/search/' + encodeURIComponent($('#q').value.trim())), 250); });
+$('#mback').onclick = () => history.back();
 $('#q').addEventListener('focus', () => { if (!location.hash.startsWith('#/search')) go('#/search'); });
 
 /* ══ 왼쪽 라이브러리 ══ */

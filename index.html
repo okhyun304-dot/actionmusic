@@ -12,7 +12,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="행동힙합">
-<link rel="stylesheet" href="app.css?v=1790680679">
+<link rel="stylesheet" href="app.css?v=1790680991">
 </head>
 <body>
 <div id="app">
@@ -38,6 +38,9 @@
   <!-- 오른쪽: 지금 보는 앨범·장·플레이리스트의 꼭지 목록 -->
   <aside id="right"><div id="rhead"></div><div id="rlist"></div></aside>
 
+
+  <!-- 폰: 뒤로 (홈이 아닐 때만. 홈 화면 아이콘으로 열면 브라우저 뒤로 버튼이 없다) -->
+  <button id="mback" title="뒤로" hidden>‹</button>
 
   <!-- 폰: 하단 탭 -->
   <nav id="tabs">
@@ -78,6 +81,6 @@
   <div id="menu" hidden></div>
   <div id="toast" hidden></div>
 </div>
-<script src="app.js?v=1790680679"></script>
+<script src="app.js?v=1790680991"></script>
 </body>
 </html>
