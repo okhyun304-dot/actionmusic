@@ -133,6 +133,10 @@ function introHtml() {
     </div></div>`;
 }
 
+/* 곡 한 줄은 어디서나 같은 꼴로: 곡명 - 가수 (대장님이 글 제목에 쓰시는 순서) */
+const songTxt = m => !m ? '' : (m.title || '곡') + (m.artist ? ' - ' + m.artist : '');
+const songHtml = m => !m ? '<i>—</i>' : esc(m.title || '곡') + (m.artist ? ` <i>- ${esc(m.artist)}</i>` : '');
+
 /* ══ 오늘의 글 ══ */
 function todayTrack() {
   const all = DATA.books.flatMap(b => b.tracks);
@@ -149,13 +153,13 @@ function todayHtml() {
     <div class="today" data-go="#/b/${b.vol}/${pad2(t.k + 1)}">
       <img src="${t.thumb}" alt="">
       <div class="tdx"><b>${esc(t.title)}</b><p>${esc(txt)}…</p>
-        <small>${esc(b.name)} · ${pad2(t.k + 1)}${m ? ' · ♪ ' + esc(m.title) : ''}</small></div>
+        <small>${esc(b.name)} · ${pad2(t.k + 1)}${m ? ' · ♪ ' + songTxt(m) : ''}</small></div>
       <button class="go" data-play="${t.v},${t.k}">▶</button></div>`;
 }
 
 const cardAlbum = b => `<div class="card" data-go="#/b/${b.vol}" data-ctx="album|${b.v}"><img class="cv tall" src="${b.cover}" alt=""><div class="ct">${esc(b.name)}</div><div class="cs">${b.year} · 앨범 · ${b.tracks.length}곡</div><button class="go" data-playctx="album|${b.v}">▶</button></div>`;
 const cardChapter = (b, c) => `<div class="card" data-go="#/c/${b.vol}/${c.ci + 1}" data-ctx="chapter|${b.v}|${c.ci}"><img class="cv" src="${b.tracks[c.from - 1].thumb}" alt=""><div class="ct">${esc(c.title)}</div><div class="cs">${b.vol}권 ${esc(c.label)} · ${c.n}곡</div><button class="go" data-playctx="chapter|${b.v}|${c.ci}">▶</button></div>`;
-const cardTrack = t => `<div class="card" data-go="#/b/${book(t.v).vol}/${pad2(t.k + 1)}"><img class="cv" src="${t.thumb}" alt=""><div class="ct">${esc(t.title)}</div><div class="cs">${book(t.v).vol}권 ${pad2(t.k + 1)} · ${esc(t.music[0]?.title || '')}</div><button class="go" data-play="${t.v},${t.k}">▶</button></div>`;
+const cardTrack = t => `<div class="card" data-go="#/b/${book(t.v).vol}/${pad2(t.k + 1)}"><img class="cv" src="${t.thumb}" alt=""><div class="ct">${esc(t.title)}</div><div class="cs">${book(t.v).vol}권 ${pad2(t.k + 1)} · ${esc(songTxt(t.music[0]))}</div><button class="go" data-play="${t.v},${t.k}">▶</button></div>`;
 function bindCards() {
   $$('[data-go]').forEach(el => el.onclick = e => { if (e.target.closest('.go')) return; go(el.dataset.go); });
   $$('[data-play]').forEach(el => el.onclick = e => { e.stopPropagation(); const [v, k] = el.dataset.play.split(',').map(Number); playTrack(v, k); });
@@ -177,7 +181,7 @@ function trackRows(tracks, ctx, opts = {}) {
     rows += `<div class="tl${on ? ' on' : ''}${SEL && SEL.v === t.v && SEL.k === t.k ? ' sel' : ''}${dead ? ' dead' : ''}${on && !playing() ? ' paused' : ''}" data-v="${t.v}" data-k="${t.k}">
       <div class="n"><span>${opts.numberByIndex ? i + 1 : t.k + 1}</span><i>▶</i><span class="eq"><b></b><b></b><b></b></span></div>
       <div class="ti"><img src="${t.thumb}" alt="" loading="lazy"><span style="min-width:0"><b>${esc(t.title)}</b><small>${opts.showBook ? `<a href="#/b/${b.vol}">${esc(b.name)}</a> · ` : ''}${esc(ch.title)}</small></span></div>
-      <div class="song">${m ? (t.music.length > 1 ? `<i>${t.music.length}곡 · </i>` : '') + esc(m.title) + (m.artist ? ` <i>· ${esc(m.artist)}</i>` : '') : '<i>—</i>'}</div>
+      <div class="song">${(t.music.length > 1 ? `<i>${t.music.length}곡 · </i>` : '') + songHtml(m)}</div>
       <button class="like${liked(t.v, t.k) ? ' on' : ''}" title="좋아요">${liked(t.v, t.k) ? '♥' : '♡'}</button>
       <div class="dur">${trackDur(t) ? fmt(trackDur(t)) : ''}</div>
       <button class="more" title="더보기">⋯</button></div>`;
@@ -323,8 +327,8 @@ function viewSearch(q, tab) {
   $('#view').innerHTML = `<div class="pad">${body}</div>`; bindCards();
   $$('.hit').forEach(el => { const v = +el.dataset.v, k = +el.dataset.k; el.onclick = e => { if (e.target.closest('.go')) return; go(`#/b/${book(v).vol}/${pad2(k + 1)}`); }; el.oncontextmenu = e => { e.preventDefault(); ctxMenu(e, ctxItems({ type: 'track', v, k })); }; });
 }
-const hitTrack = (t, hl) => `<div class="hit" data-v="${t.v}" data-k="${t.k}"><img src="${t.thumb}" alt=""><span style="min-width:0"><b>${hl(t.title)}</b><small>꼭지 · ${book(t.v).vol}권 ${pad2(t.k + 1)}${t.music[0] ? ' · ♪ ' + hl(t.music[0].title) : ''}</small></span><button class="go tile-go" data-play="${t.v},${t.k}" style="margin-left:auto;background:none;color:#fff;font-size:16px">▶</button></div>`;
-const hitSong = (t, m, hl) => `<div class="hit" data-v="${t.v}" data-k="${t.k}"><img src="https://i.ytimg.com/vi/${m.vid}/mqdefault.jpg" alt=""><span style="min-width:0"><b>${hl(m.title)}</b><small>${hl(m.artist)} · 꼭지 ${esc(t.title)}</small></span></div>`;
+const hitTrack = (t, hl) => `<div class="hit" data-v="${t.v}" data-k="${t.k}"><img src="${t.thumb}" alt=""><span style="min-width:0"><b>${hl(t.title)}</b><small>꼭지 · ${book(t.v).vol}권 ${pad2(t.k + 1)}${t.music[0] ? ' · ♪ ' + hl(songTxt(t.music[0])) : ''}</small></span><button class="go tile-go" data-play="${t.v},${t.k}" style="margin-left:auto;background:none;color:#fff;font-size:16px">▶</button></div>`;
+const hitSong = (t, m, hl) => `<div class="hit" data-v="${t.v}" data-k="${t.k}"><img src="https://i.ytimg.com/vi/${m.vid}/mqdefault.jpg" alt=""><span style="min-width:0"><b>${hl(songTxt(m))}</b><small>꼭지 · ${esc(t.title)}</small></span></div>`;
 function shade(hex, i) { const n = parseInt(hex.slice(1), 16); const f = 0.75 + (i % 4) * 0.12; const c = x => Math.min(255, Math.round(x * f)); return `rgb(${c(n >> 16)},${c(n >> 8 & 255)},${c(n & 255)})`; }
 
 /* ══ 폰 라이브러리 ══ */
@@ -348,7 +352,7 @@ function viewTrack(v, k) {
     <h1><i>${pad2(k + 1)}</i>${esc(t.title)}</h1>
     <div class="acts"><button class="playbig" data-act="play">${c && c.v === v && c.t === k && playing() ? '❚❚' : '▶'}</button><button class="ic like${liked(v, k) ? ' on' : ''}" data-act="like">${liked(v, k) ? '♥' : '♡'}</button><button class="ic" data-act="fs" title="전체화면">⛶</button><button class="ic" data-act="more" title="더보기">⋯</button><span style="margin-left:auto;font-size:12px;color:var(--dim)">${t.date || ''}</span></div>
     ${t.thumb && !t.thumb.startsWith('http') ? `<img class="hero" src="${t.thumb}" alt="">` : ''}
-    ${t.music.length ? `<div class="songs">${t.music.map((m, s) => `<div class="songrow${m.dead ? ' dead' : ''}${c && c.v === v && c.t === k && c.s === s ? ' on' : ''}" data-s="${s}"><img src="https://i.ytimg.com/vi/${m.vid}/mqdefault.jpg" alt=""><div class="st"><b>${esc(m.title || '곡')}</b><small>${m.dead ? '유튜브에서 내려간 영상 · 교체 예정' : esc(m.artist) + (m.dur ? ' · ' + fmt(m.dur) : '')}</small></div>${m.lyr ? `<button class="lyb" data-vid="${m.vid}" title="가사">가사</button>` : ''}<span class="pb">▶</span></div><div class="lyrics" id="ly-${m.vid}" hidden></div>`).join('')}</div>` : ''}
+    ${t.music.length ? `<div class="songs">${t.music.map((m, s) => `<div class="songrow${m.dead ? ' dead' : ''}${c && c.v === v && c.t === k && c.s === s ? ' on' : ''}" data-s="${s}"><img src="https://i.ytimg.com/vi/${m.vid}/mqdefault.jpg" alt=""><div class="st"><b>${songHtml(m)}</b><small>${m.dead ? '유튜브에서 내려간 영상 · 교체 예정' : (m.dur ? fmt(m.dur) : '')}</small></div>${m.lyr ? `<button class="lyb" data-vid="${m.vid}" title="가사">가사</button>` : ''}<span class="pb">▶</span></div><div class="lyrics" id="ly-${m.vid}" hidden></div>`).join('')}</div>` : ''}
     <div class="body">${t.html}</div>
     <div class="pn">${prev ? `<a href="#/b/${b.vol}/${pad2(k)}">← ${pad2(k)} ${esc(prev.title)}</a>` : '<span></span>'}${next ? `<a href="#/b/${b.vol}/${pad2(k + 2)}">${pad2(k + 2)} ${esc(next.title)} →</a>` : '<span></span>'}</div>
   </div>`;
@@ -390,7 +394,7 @@ function openList(ctx) {
   L.tracks.forEach((t, i) => {
     if (L.chapters) { const ch = L.chapters.find(x => t.k === x.from - 1); if (ch) cards += `</div><div class="gchap">${esc(ch.label)}<b>${esc(ch.title)}</b></div><div class="gcards">`; }
     const m = t.music[0]; const dead = t.music.length && t.music.every(x => x.dead);
-    cards += `<div class="gc${c && c.v === t.v && c.t === t.k ? ' on' : ''}${dead ? ' dead' : ''}" data-v="${t.v}" data-k="${t.k}"><img class="cv" src="${t.thumb}" alt="" loading="lazy"><span class="n">${L.chapters ? pad2(t.k + 1) : pad2(i + 1)}</span><div class="t">${esc(t.title)}</div><div class="s">${m ? '♪ ' + esc(m.title) : '—'}</div><button class="go">▶</button></div>`;
+    cards += `<div class="gc${c && c.v === t.v && c.t === t.k ? ' on' : ''}${dead ? ' dead' : ''}" data-v="${t.v}" data-k="${t.k}"><img class="cv" src="${t.thumb}" alt="" loading="lazy"><span class="n">${L.chapters ? pad2(t.k + 1) : pad2(i + 1)}</span><div class="t">${esc(t.title)}</div><div class="s">${m ? '♪ ' + songHtml(m) : '—'}</div><button class="go">▶</button></div>`;
   });
   $('#view').innerHTML = `<div class="grid-h" style="--c:${color}">${L.img ? `<img class="${ctx.type === 'album' ? 'tall' : ''}" src="${L.img}" alt="">` : `<div class="ico ${ctx.type === 'pl' ? 'pl' : ''}">${L.ico || '♫'}</div>`}<div style="min-width:0">
       <div class="kind">${ctx.type === 'album' ? '앨범' : '플레이리스트'}</div><h1>${esc(L.name)}</h1>
@@ -422,7 +426,7 @@ function renderList() {
     if (L.chapters) { const ch = L.chapters.find(x => t.k === x.from - 1); if (ch) rows += `<div class="rch">${esc(ch.label)}<b>${esc(ch.title)}</b></div>`; }
     rows += `<div class="rl${c && c.v === t.v && c.t === t.k ? ' on' : ''}${PAGE && PAGE.v === t.v && PAGE.k === t.k ? ' sel' : ''}${dead ? ' dead' : ''}${c && c.v === t.v && c.t === t.k && !playing() ? ' paused' : ''}" data-v="${t.v}" data-k="${t.k}" title="${esc(t.title)}">
       <div class="n"><span>${L.chapters ? t.k + 1 : i + 1}</span><i>▶</i><span class="eq"><b></b><b></b><b></b></span></div>
-      <img src="${t.thumb}" alt="" loading="lazy"><div class="t"><b>${esc(t.title)}</b><small>${m ? esc(m.title) : '—'}</small></div><div class="d">${trackDur(t) ? fmt(trackDur(t)) : ''}</div></div>`;
+      <img src="${t.thumb}" alt="" loading="lazy"><div class="t"><b>${esc(t.title)}</b><small>${songHtml(m)}</small></div><div class="d">${trackDur(t) ? fmt(trackDur(t)) : ''}</div></div>`;
   });
   $('#rlist').innerHTML = rows;
   $$('#rlist .rl').forEach(el => {
@@ -569,7 +573,7 @@ function playCur(seek) {
   if (Q.ctx && (!LIST || !sameCtx(LIST)) && Q.ctx.type !== 'artist') { LIST = { type: Q.ctx.type, v: Q.ctx.v, c: Q.ctx.c, id: Q.ctx.id }; renderList(); }
   $('#bar').classList.remove('idle');
   $('#now-img').src = `https://i.ytimg.com/vi/${m.vid}/mqdefault.jpg`;
-  $('#now-song').textContent = m.title || '곡'; $('#now-sub').textContent = `${pad2(q.t + 1)} ${t.title} · ${b.vol}권`;
+  $('#now-song').textContent = songTxt(m) || '곡'; $('#now-sub').textContent = `${pad2(q.t + 1)} ${t.title} · ${b.vol}권`;
   const run = () => { seek ? P.loadVideoById({ videoId: m.vid, startSeconds: seek }) : P.loadVideoById(m.vid); };
   if (pReady()) run(); else pendingPlay = run;
   S.plays[key(q.v, q.t)] = (S.plays[key(q.v, q.t)] || 0) + 1;
@@ -612,7 +616,7 @@ function restoreQueue() {
   const q = load('q', null); if (!q || !q.list?.length) return;
   Q.list = q.list; Q.i = q.i; Q.ctx = q.ctx; Q.orig = q.orig || q.list.slice();
   const t = curTrack(), m = t && t.music[Q.list[Q.i].s]; if (!m) return;
-  $('#bar').classList.remove('idle'); $('#now-img').src = `https://i.ytimg.com/vi/${m.vid}/mqdefault.jpg`; $('#now-song').textContent = m.title; $('#now-sub').textContent = `${pad2(Q.i >= 0 ? Q.list[Q.i].t + 1 : 0)} ${t.title} · ${book(t.v).vol}권`;
+  $('#bar').classList.remove('idle'); $('#now-img').src = `https://i.ytimg.com/vi/${m.vid}/mqdefault.jpg`; $('#now-song').textContent = songTxt(m); $('#now-sub').textContent = `${pad2(Q.i >= 0 ? Q.list[Q.i].t + 1 : 0)} ${t.title} · ${book(t.v).vol}권`;
   if (!pendingPlay) pendingPlay = () => { P.cueVideoById({ videoId: m.vid, startSeconds: q.pos || 0 }); };   // QR 자동재생이 먼저면 그걸 우선
   mediaSession(t, m, book(t.v));                                    // 앱을 다시 열었을 때도 잠금화면에 곡이 뜨게
   syncBar();
