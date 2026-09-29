@@ -252,6 +252,7 @@ img{display:block}
   .tl-h{display:none}.tl{grid-template-columns:24px 1fr 32px;padding:7px 6px}.tl .song,.tl .dur,.tl .like{display:none}
   .tl .ti b{font-size:14px}.tl .more{opacity:1}
   .sticky{padding:8px 12px 8px 52px;min-height:56px}.sticky b{font-size:16px}   /* 왼쪽 위 뒤로 버튼 자리를 비워 둔다 */
+  .sticky .playbig{display:none}                                             /* 폰: 고정 머리글엔 앨범 이름만 (재생은 아래 바에 있다) */
   .genres{grid-template-columns:repeat(2,1fr);gap:10px}.genre{font-size:16px;padding:10px}
   /* 지금 재생 시트 */
   #sheet{display:flex;flex-direction:column;position:fixed;inset:0;z-index:40;background:linear-gradient(var(--c,#333) 0,#121212 45%)}
