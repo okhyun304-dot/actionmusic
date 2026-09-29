@@ -389,7 +389,7 @@ function viewTrack(v, k) {
   const c = cur(); const prev = b.tracks[k - 1], next = b.tracks[k + 1];
   const ch = b.chapters.find(x => k >= x.from - 1 && k < x.from - 1 + x.n);
   $('#view').innerHTML = `<div class="tp">
-    <div class="crumb"><a href="#/b/${b.vol}">${esc(b.name)}</a> · <a href="#/c/${b.vol}/${ch.ci + 1}">${esc(ch.label)} ${esc(ch.title)}</a></div>
+    <div class="crumb"><span class="ctx"><a href="#/b/${b.vol}">${esc(b.name)}</a> · <a href="#/c/${b.vol}/${ch.ci + 1}">${esc(ch.label)} ${esc(ch.title)}</a></span><button class="clist" title="목록">≡</button></div>
     <h1><i>${pad2(k + 1)}</i>${esc(t.title)}</h1>
     <div class="acts"><button class="playbig" data-act="play">${c && c.v === v && c.t === k && playing() ? '❚❚' : '▶'}</button><button class="ic like${liked(v, k) ? ' on' : ''}" data-act="like">${liked(v, k) ? '♥' : '♡'}</button><button class="ic" data-act="fs" title="전체화면">⛶</button><button class="ic" data-act="more" title="더보기">⋯</button><span style="margin-left:auto;font-size:12px;color:var(--dim)">${t.date || ''}</span></div>
     ${t.thumb && !t.thumb.startsWith('http') ? `<img class="hero" src="${t.thumb}" alt="">` : ''}
@@ -404,6 +404,7 @@ function viewTrack(v, k) {
     if (q && q.v === v && q.t === k && q.s === s_) togglePlay(); else playTrack(v, k, null, s_);   // 듣던 곡을 다시 누르면 멈춤
   });
   R.querySelectorAll('.crumb a').forEach(a => a.onclick = () => { SCROLL_CUR = true; });   // 목록으로 갈 땐 이 글 자리로
+  R.querySelector('.crumb .clist').onclick = () => { SCROLL_CUR = true; go(`#/b/${b.vol}`); };
   R.querySelector('[data-act=play]').onclick = () => { const q = cur(); if (q && q.v === v && q.t === k) togglePlay(); else playTrack(v, k); };
   R.querySelector('[data-act=like]').onclick = () => toggleLike(v, k);
   R.querySelector('[data-act=fs]').onclick = () => fullscreen(t);
