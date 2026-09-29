@@ -180,7 +180,7 @@ function trackRows(tracks, ctx, opts = {}) {
     if (opts.chapters && (i === 0 || chapterOf(tracks[i - 1]) !== ch)) rows += `<div class="chap">${esc(ch.label)}<b>${esc(ch.title)}</b><a href="#/c/${b.vol}/${ch.ci + 1}">플레이리스트로 보기 ›</a></div>`;
     rows += `<div class="tl${on ? ' on' : ''}${SEL && SEL.v === t.v && SEL.k === t.k ? ' sel' : ''}${dead ? ' dead' : ''}${on && !playing() ? ' paused' : ''}" data-v="${t.v}" data-k="${t.k}">
       <div class="n"><span>${opts.numberByIndex ? i + 1 : t.k + 1}</span><i>▶</i><span class="eq"><b></b><b></b><b></b></span></div>
-      <div class="ti"><img src="${t.thumb}" alt="" loading="lazy"><span style="min-width:0"><b>${esc(t.title)}</b><small>${opts.showBook ? `<a href="#/b/${b.vol}">${esc(b.name)}</a> · ` : ''}${esc(ch.title)}</small></span></div>
+      <div class="ti"><img src="${t.thumb}" alt="" loading="lazy"><span style="min-width:0"><b>${esc(t.title)}</b><small>${opts.showBook ? `<a href="#/b/${b.vol}">${esc(b.name)}</a> · ` : ''}<span class="ch">${esc(ch.title)}</span><span class="sg">${songHtml(m)}</span></small></span></div>
       <div class="song">${(t.music.length > 1 ? `<i>${t.music.length}곡 · </i>` : '') + songHtml(m)}</div>
       <button class="like${liked(t.v, t.k) ? ' on' : ''}" title="좋아요">${liked(t.v, t.k) ? '♥' : '♡'}</button>
       <div class="dur">${trackDur(t) ? fmt(trackDur(t)) : ''}</div>
