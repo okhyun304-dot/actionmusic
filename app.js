@@ -68,6 +68,12 @@ function route() {
 $('#back').onclick = () => history.back(); $('#fwd').onclick = () => history.forward();
 let qTimer; $('#q').addEventListener('input', () => { clearTimeout(qTimer); qTimer = setTimeout(() => go('#/search/' + encodeURIComponent($('#q').value.trim())), 250); });
 $('#mback').onclick = () => history.back();
+$('#nowlist').onclick = () => {                                   // 재생 바의 목록 버튼
+  const q = cur(); if (!q) return toast('재생 중인 곡이 없습니다');
+  SCROLL_CUR = true;
+  const c = Q.ctx || {};
+  go(c.type === 'chapter' ? `#/c/${book(q.v).vol}/${c.c + 1}` : c.type === 'pl' ? `#/pl/${c.id}` : c.type === 'liked' ? '#/liked' : `#/b/${book(q.v).vol}`);
+};
 $('#q').addEventListener('focus', () => { if (!location.hash.startsWith('#/search')) go('#/search'); });
 
 /* ══ 왼쪽 라이브러리 ══ */
@@ -193,7 +199,12 @@ function trackRows(tracks, ctx, opts = {}) {
   });
   return rows;
 }
+function scrollToCur() {
+  if (!SCROLL_CUR) return; SCROLL_CUR = false;
+  requestAnimationFrame(() => { const el = $('#main .tl.on, #main .gc.on'); if (el) el.scrollIntoView({ block: 'center' }); });
+}
 function bindRows(ctx) {
+  scrollToCur();
   $$('.tl').forEach(el => {
     const v = +el.dataset.v, k = +el.dataset.k;
     el.onclick = e => {
@@ -201,7 +212,7 @@ function bindRows(ctx) {
       if (e.target.closest('.more')) { ctxMenu(e, ctxItems({ type: 'track', v, k })); return; }
       if (e.target.closest('.n')) { playTrack(v, k, ctx); return; }
       if (e.target.closest('a')) return;
-      go(`#/b/${book(v).vol}/${pad2(k + 1)}`);
+      playTrack(v, k, ctx); go(`#/b/${book(v).vol}/${pad2(k + 1)}`);   // 누르면 바로 재생되고 글도 열린다
     };
     el.ondblclick = e => { if (!e.target.closest('.like,.more,a')) playTrack(v, k, ctx); };
     el.oncontextmenu = e => { e.preventDefault(); ctxMenu(e, ctxItems({ type: 'track', v, k })); };
@@ -333,6 +344,7 @@ function viewSearch(q, tab) {
   $('#view').innerHTML = `<div class="pad">${mbox}${body}</div>`; bindSearchBox(q); bindCards();
   $$('.hit').forEach(el => { const v = +el.dataset.v, k = +el.dataset.k; el.onclick = e => { if (e.target.closest('.go')) return; go(`#/b/${book(v).vol}/${pad2(k + 1)}`); }; el.oncontextmenu = e => { e.preventDefault(); ctxMenu(e, ctxItems({ type: 'track', v, k })); }; });
 }
+let SCROLL_CUR = false;                                           // 목록을 열 때 듣던 곡 자리로 내려준다
 let MQ_FOCUS = false;                                             // 글자를 칠 때마다 화면을 다시 그리므로 커서를 되돌려 준다
 function bindSearchBox(q) {
   const el = $('#mq'); if (!el) return;
@@ -380,12 +392,16 @@ function viewTrack(v, k) {
     <h1><i>${pad2(k + 1)}</i>${esc(t.title)}</h1>
     <div class="acts"><button class="playbig" data-act="play">${c && c.v === v && c.t === k && playing() ? '❚❚' : '▶'}</button><button class="ic like${liked(v, k) ? ' on' : ''}" data-act="like">${liked(v, k) ? '♥' : '♡'}</button><button class="ic" data-act="fs" title="전체화면">⛶</button><button class="ic" data-act="more" title="더보기">⋯</button><span style="margin-left:auto;font-size:12px;color:var(--dim)">${t.date || ''}</span></div>
     ${t.thumb && !t.thumb.startsWith('http') ? `<img class="hero" src="${t.thumb}" alt="">` : ''}
-    ${t.music.length ? `<div class="songs">${t.music.map((m, s) => `<div class="songrow${m.dead ? ' dead' : ''}${c && c.v === v && c.t === k && c.s === s ? ' on' : ''}" data-s="${s}"><img src="https://i.ytimg.com/vi/${m.vid}/mqdefault.jpg" alt=""><div class="st"><b>${songHtml(m)}</b><small>${m.dead ? '유튜브에서 내려간 영상 · 교체 예정' : (m.dur ? fmt(m.dur) : '')}</small></div>${m.lyr ? `<button class="lyb" data-vid="${m.vid}" title="가사">가사</button>` : ''}<span class="pb">▶</span></div><div class="lyrics" id="ly-${m.vid}" hidden></div>`).join('')}</div>` : ''}
+    ${t.music.length ? `<div class="songs">${t.music.map((m, s) => `<div class="songrow${m.dead ? ' dead' : ''}${c && c.v === v && c.t === k && c.s === s ? ' on' : ''}" data-s="${s}"><img src="https://i.ytimg.com/vi/${m.vid}/mqdefault.jpg" alt=""><div class="st"><b>${songHtml(m)}</b><small>${m.dead ? '유튜브에서 내려간 영상 · 교체 예정' : (m.dur ? fmt(m.dur) : '')}</small></div>${m.lyr ? `<button class="lyb" data-vid="${m.vid}" title="가사">가사</button>` : ''}<span class="pb">${c && c.v === v && c.t === k && c.s === s && playing() ? '❚❚' : '▶'}</span></div><div class="lyrics" id="ly-${m.vid}" hidden></div>`).join('')}</div>` : ''}
     <div class="body">${t.html}</div>
     <div class="pn">${prev ? `<a href="#/b/${b.vol}/${pad2(k)}">← ${pad2(k)} ${esc(prev.title)}</a>` : '<span></span>'}${next ? `<a href="#/b/${b.vol}/${pad2(k + 2)}">${pad2(k + 2)} ${esc(next.title)} →</a>` : '<span></span>'}</div>
   </div>`;
   const R = $('#view');
-  R.querySelectorAll('.songrow').forEach(el => el.onclick = e => { if (e.target.closest('.lyb')) { toggleLyrics(e.target.dataset.vid); return; } playTrack(v, k, null, +el.dataset.s); });
+  R.querySelectorAll('.songrow').forEach(el => el.onclick = e => {
+    if (e.target.closest('.lyb')) { toggleLyrics(e.target.dataset.vid); return; }
+    const q = cur(); const s_ = +el.dataset.s;
+    if (q && q.v === v && q.t === k && q.s === s_) togglePlay(); else playTrack(v, k, null, s_);   // 듣던 곡을 다시 누르면 멈춤
+  });
   R.querySelector('[data-act=play]').onclick = () => { const q = cur(); if (q && q.v === v && q.t === k) togglePlay(); else playTrack(v, k); };
   R.querySelector('[data-act=like]').onclick = () => toggleLike(v, k);
   R.querySelector('[data-act=fs]').onclick = () => fullscreen(t);
@@ -396,7 +412,10 @@ function renderBody() {                                            // 꼭지 페
   if (!PAGE || !$('.tp')) return;
   const q = cur(); const p = playing(); const on = q && q.v === PAGE.v && q.t === PAGE.k;
   const pb = $('.tp [data-act=play]'); if (pb) pb.textContent = on && p ? '❚❚' : '▶';
-  $$('.tp .songrow').forEach(el => el.classList.toggle('on', !!on && +el.dataset.s === q.s));
+  $$('.tp .songrow').forEach(el => {
+    const cur_ = !!on && +el.dataset.s === q.s; el.classList.toggle('on', cur_);
+    const pb2 = el.querySelector('.pb'); if (pb2) pb2.textContent = cur_ && p ? '❚❚' : '▶';       // 띠 안의 버튼도 같이 바뀐다
+  });
   const lk = $('.tp [data-act=like]'); if (lk) { lk.classList.toggle('on', liked(PAGE.v, PAGE.k)); lk.textContent = liked(PAGE.v, PAGE.k) ? '♥' : '♡'; }
 }
 function renderQueue() {}

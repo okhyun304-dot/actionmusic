@@ -16,7 +16,7 @@ img{display:block}
 #app{display:grid;height:100%;grid-template-columns:var(--side) 1fr var(--right);grid-template-rows:var(--top) 1fr var(--bar);gap:8px;padding:0 8px;background:var(--bg)}
 #top{grid-row:1;grid-column:1/4;display:flex;align-items:center;gap:12px;padding:0 8px}
 #side{grid-row:2;grid-column:1;background:var(--panel);border-radius:8px;display:flex;flex-direction:column;overflow:hidden}
-#main{grid-row:2;grid-column:2;background:var(--panel);border-radius:8px;overflow-y:auto;overflow-x:hidden;position:relative;scroll-behavior:smooth}
+#main{grid-row:2;grid-column:2;background:var(--panel);border-radius:8px;overflow-y:auto;overflow-x:hidden;position:relative}
 #right{grid-row:2;grid-column:3;background:var(--panel);border-radius:8px;display:flex;flex-direction:column;overflow:hidden}
 #bar{grid-row:3;grid-column:1/4}
 #tabs,#sheet{display:none}
@@ -241,7 +241,7 @@ img{display:block}
   #tabs a{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;color:var(--dim)}
   #tabs a.on{color:var(--ink)}#tabs a i{font-style:normal;font-size:22px}
   .now img{width:40px;height:40px}.now .like{display:none}
-  .ctl{width:auto}.prog{display:none}.btns{gap:10px}.btns button:not(.big):not(#next){display:none}.btns #next{font-size:20px}
+  .ctl{width:auto}.prog{display:none}.btns{gap:10px}.btns button:not(.big):not(#next):not(#nowlist){display:none}.btns #next{font-size:20px}
   .btns .big{width:32px;height:32px;background:none;color:#fff;font-size:18px}
   .pad{padding:16px 16px 30px}.h1{font-size:22px}
   .cards{grid-template-columns:repeat(2,1fr);gap:10px}.card{padding:10px}.card .go{display:none}
@@ -444,3 +444,10 @@ body[data-albums=row] .alb{padding:10px}body[data-albums=row] .alb b{font-size:1
 }
 
 @media (max-width:900px){.msbox{margin-left:46px}}   /* 왼쪽 위 뒤로 버튼 자리를 비워 둔다 */
+
+/* 재생 바의 목록 버튼 */
+#nowlist{display:none}
+@media (max-width:900px){
+  #nowlist{display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;color:#fff;font-size:17px;flex:none}
+  #nowlist:active{background:#ffffff22}
+}
