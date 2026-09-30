@@ -446,7 +446,7 @@ function openList(ctx) {
   L.tracks.forEach((t, i) => {
     if (L.chapters) { const ch = L.chapters.find(x => t.k === x.from - 1); if (ch) cards += `</div><div class="gchap">${esc(ch.label)}<b>${esc(ch.title)}</b></div><div class="gcards">`; }
     const m = t.music[0]; const dead = t.music.length && t.music.every(x => x.dead);
-    cards += `<div class="gc${c && c.v === t.v && c.t === t.k ? ' on' : ''}${dead ? ' dead' : ''}" data-v="${t.v}" data-k="${t.k}"><img class="cv" src="${t.thumb}" alt="" loading="lazy"><span class="n">${L.chapters ? pad2(t.k + 1) : pad2(i + 1)}</span><div class="t">${esc(t.title)}</div><div class="s">${m ? '♪ ' + songHtml(m) : '—'}</div><button class="go">▶</button></div>`;
+    cards += `<div class="gc${c && c.v === t.v && c.t === t.k ? ' on' : ''}${dead ? ' dead' : ''}" data-v="${t.v}" data-k="${t.k}"><img class="cv" src="${t.thumb}" alt="" loading="lazy"><span class="n">${L.chapters ? pad2(t.k + 1) : pad2(i + 1)}</span><div class="t">${vidUrl(book(t.v).vol, t.k) ? '<i class="vflag">▷</i> ' : ''}${esc(t.title)}</div><div class="s">${m ? '♪ ' + songHtml(m) : '—'}</div><button class="go">▶</button></div>`;
   });
   $('#view').innerHTML = `<div class="grid-h" style="--c:${color}">${L.img ? `<img class="${ctx.type === 'album' ? 'tall' : ''}" src="${L.img}" alt="">` : `<div class="ico ${ctx.type === 'pl' ? 'pl' : ''}">${L.ico || '♫'}</div>`}<div style="min-width:0">
       <div class="kind">${ctx.type === 'album' ? '앨범' : '플레이리스트'}</div><h1>${esc(L.name)}</h1>
@@ -478,7 +478,7 @@ function renderList() {
     if (L.chapters) { const ch = L.chapters.find(x => t.k === x.from - 1); if (ch) rows += `<div class="rch">${esc(ch.label)}<b>${esc(ch.title)}</b></div>`; }
     rows += `<div class="rl${c && c.v === t.v && c.t === t.k ? ' on' : ''}${PAGE && PAGE.v === t.v && PAGE.k === t.k ? ' sel' : ''}${dead ? ' dead' : ''}${c && c.v === t.v && c.t === t.k && !playing() ? ' paused' : ''}" data-v="${t.v}" data-k="${t.k}" title="${esc(t.title)}">
       <div class="n"><span>${L.chapters ? t.k + 1 : i + 1}</span><i>▶</i><span class="eq"><b></b><b></b><b></b></span></div>
-      <img src="${t.thumb}" alt="" loading="lazy"><div class="t"><b>${esc(t.title)}</b><small>${songHtml(m)}</small></div><div class="d">${trackDur(t) ? fmt(trackDur(t)) : ''}</div></div>`;
+      <img src="${t.thumb}" alt="" loading="lazy"><div class="t"><b>${vidUrl(book(t.v).vol, t.k) ? '<i class="vflag">▷</i> ' : ''}${esc(t.title)}</b><small>${songHtml(m)}</small></div><div class="d">${trackDur(t) ? fmt(trackDur(t)) : ''}</div></div>`;
   });
   $('#rlist').innerHTML = rows;
   $$('#rlist .rl').forEach(el => {

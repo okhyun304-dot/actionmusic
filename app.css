@@ -475,3 +475,5 @@ body[data-albums=row] .alb{padding:10px}body[data-albums=row] .alb b{font-size:1
 .vidbox .vcap{font-size:12px;color:var(--faint);padding:7px 12px;background:var(--panel2)}
 .tl .vflag{color:#9a9a9a;font-size:11px;margin-left:6px;flex:none}
 @media (max-width:900px){.vidbox{margin:0 -16px 16px;border-radius:0}}
+
+.vflag{font-style:normal;color:#9a9a9a;font-size:11px}
