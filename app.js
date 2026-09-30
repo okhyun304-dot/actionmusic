@@ -481,7 +481,15 @@ function renderBody() {                                            // 꼭지 페
   const lk = $('.tp [data-act=like]'); if (lk) { lk.classList.toggle('on', liked(PAGE.v, PAGE.k)); lk.textContent = liked(PAGE.v, PAGE.k) ? '♥' : '♡'; }
 }
 function renderQueue() {}
-function fullscreen(t) { $('#fs').hidden = false; $('#fs').style.setProperty('--c', book(t.v).color); $('#fs-in').innerHTML = `<div style="font-size:14px;opacity:.7;font-weight:400">${esc(book(t.v).name)} · ${esc(t.chapter)}</div><h2 style="margin:4px 0 24px">${pad2(t.k + 1)} ${esc(t.title)}</h2><div class="body">${t.html}</div>`; }
+function fullscreen(t) {                                           // 전체화면으로 읽기: 그 꼭지 사진을 어둡게 깔고 흰 글씨
+  const b = book(t.v); const bg = t.thumb || b.cover;
+  const fs = $('#fs'); fs.hidden = false;
+  fs.style.setProperty('--c', b.color);
+  $('#fs-bg').style.backgroundImage = bg ? `url("${bg}")` : 'none';
+  $('#fs-head').innerHTML = `<div class="fsc">${esc(b.name)} · ${esc(t.chapter)}</div><h2>${pad2(t.k + 1)} ${esc(t.title)}</h2>`;
+  $('#fs-in').innerHTML = `<div class="body">${t.html}</div>`;
+  fs.scrollTop = 0;
+}
 $('#fs-close').onclick = () => { $('#fs').hidden = true; };
 
 /* ══ 오른쪽: 꼭지 목록 ══ */
