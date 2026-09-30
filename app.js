@@ -573,9 +573,31 @@ function renderList() {
   const sel = $('#rlist .rl.sel'); if (sel) sel.scrollIntoView({ block: 'nearest' });
 }
 
-/* ══ 재생기 ══ 드롭박스에 MP3 가 있으면 그걸로 (광고 없음·영상이 내려가도 재생됨), 없으면 유튜브 */
-const AUD = new Audio(); AUD.preload = 'auto';
+/* ══ 재생기 ══ 드롭박스에 MP3 가 있으면 그걸로 (광고 없음·영상이 내려가도 재생됨), 없으면 유튜브.
+   재생기를 둘 두고 다음 곡을 미리 받아둔다 — 드롭박스는 주소를 두 번 넘겨줘서, 그때 가서 받으면 곡 사이가 끊긴다. */
 let USE = 'yt';                                                   // 지금 곡을 무엇으로 트는가
+let AUD_RETRY = 0;
+function mkAudio() {
+  const a = new Audio(); a.preload = 'auto'; a.crossOrigin = null;
+  a.addEventListener('loadedmetadata', () => { if (a !== AUD || USE !== 'mp3') return; const q = cur(); if (!q) return; const m = trk(q.v, q.t).music[q.s]; if (m && !m.dur) m.dur = Math.round(a.duration); });
+  a.addEventListener('ended', () => { if (a !== AUD || USE !== 'mp3') return; if (S.repeat === 2) { a.currentTime = 0; a.play().catch(() => {}); } else step(1); });
+  for (const ev of ['play', 'pause']) a.addEventListener(ev, () => { if (a === AUD && USE === 'mp3') { syncBar(); markRows(); renderBody(); } });
+  a.addEventListener('playing', () => { if (a === AUD) AUD_RETRY = 0; });
+  a.addEventListener('error', () => {
+    if (a !== AUD || USE !== 'mp3') return;
+    const q = cur(); if (!q) return;
+    const m = trk(q.v, q.t).music[q.s];
+    if (AUD_RETRY < 2 && hasMp3(m.vid)) {                         // 드롭박스가 한 번 튕기는 일이 있어 두 번까지 다시 시도
+      AUD_RETRY++; const at = a.currentTime || 0;
+      setTimeout(() => { a.src = mp3Url(m.vid) + '&r=' + AUD_RETRY; if (at) a.currentTime = at; a.play().catch(() => {}); }, 400);
+      return;
+    }
+    USE = 'yt'; const vb = document.querySelector('.video'); if (vb) vb.style.display = '';
+    if (ytReady) YTP.loadVideoById(m.vid);                        // 그래도 안 되면 유튜브로
+  });
+  return a;
+}
+let AUD = mkAudio(), NXT = mkAudio();                             // AUD = 지금 나오는 것, NXT = 다음 곡 미리 받는 것
 document.addEventListener('DOMContentLoaded', () => { const vb = document.querySelector('.video'); if (vb) vb.style.display = 'none'; });
 const mp3Url = vid => (DATA && DATA.mp3base) ? DATA.mp3base + '&preview=' + vid + '.mp3&dl=1' : null;
 const hasMp3 = vid => !!(DATA && DATA.mp3base && DATA.mp3 && DATA.mp3[vid]);
@@ -589,7 +611,7 @@ const P = {
   playVideo:  () => USE === 'mp3' ? AUD.play().catch(() => {}) : YTP.playVideo(),
   pauseVideo: () => USE === 'mp3' ? AUD.pause() : YTP.pauseVideo(),
   seekTo: (t) => { if (USE === 'mp3') AUD.currentTime = t; else YTP.seekTo(t, true); },
-  setVolume: (v) => { AUD.volume = v / 100; if (ytReady) YTP.setVolume(v); },
+  setVolume: (v) => { AUD.volume = v / 100; NXT.volume = v / 100; if (ytReady) YTP.setVolume(v); },
   mute:   () => { AUD.muted = true;  if (ytReady) YTP.mute(); },
   unMute: () => { AUD.muted = false; if (ytReady) YTP.unMute(); },
   loadVideoById: (a) => load_(a, true),
@@ -599,51 +621,35 @@ function load_(a, go) {
   const vid = typeof a === 'string' ? a : a.videoId, at = (typeof a === 'object' && a.startSeconds) || 0;
   const vb = document.querySelector('.video');
   if (hasMp3(vid)) {
-    USE = 'mp3';
+    USE = 'mp3'; AUD_RETRY = 0;
     if (ytReady) YTP.stopVideo();
-    AUD.src = mp3Url(vid); AUD.volume = S.vol / 100; AUD.muted = !!S.muted;
-    if (at) AUD.currentTime = at;
+    if (NXT.dataset.vid === vid && NXT.readyState >= 2) {          // 미리 받아둔 게 있으면 그걸로 바꿔 끼운다 (끊김 없음)
+      const old = AUD; old.pause(); old.removeAttribute('src'); old.load(); delete old.dataset.vid;
+      AUD = NXT; NXT = old;
+    } else if (AUD.dataset.vid !== vid) {
+      AUD.src = mp3Url(vid); AUD.dataset.vid = vid;
+    }
+    AUD.volume = S.vol / 100; AUD.muted = !!S.muted;
+    if (at) { try { AUD.currentTime = at; } catch (e) {} }
     if (vb) vb.style.display = 'none';                             // MP3 로 트는 동안엔 유튜브 창이 필요 없다
-    WARMED = null; AUD_RETRY = 0;
     if (go) AUD.play().catch(() => syncBar());
+    setTimeout(prepNext, 800);                                     // 다음 곡 미리 받기 시작
   } else {
-    USE = 'yt'; AUD.pause(); AUD.removeAttribute('src');
+    USE = 'yt'; AUD.pause(); AUD.removeAttribute('src'); delete AUD.dataset.vid;
     if (vb) vb.style.display = '';
     if (!ytReady) return;
     go ? (at ? YTP.loadVideoById({ videoId: vid, startSeconds: at }) : YTP.loadVideoById(vid))
        : YTP.cueVideoById({ videoId: vid, startSeconds: at });
   }
 }
-AUD.addEventListener('loadedmetadata', () => { const q = cur(); if (q && USE === 'mp3') { const m = trk(q.v, q.t).music[q.s]; if (!m.dur) m.dur = Math.round(AUD.duration); } });
-AUD.addEventListener('ended', () => { if (USE !== 'mp3') return; if (S.repeat === 2) { AUD.currentTime = 0; AUD.play(); } else step(1); });
-for (const ev of ['play', 'pause']) AUD.addEventListener(ev, () => { if (USE === 'mp3') { syncBar(); markRows(); renderBody(); } });
-let AUD_RETRY = 0;
-AUD.addEventListener('error', () => {
-  if (USE !== 'mp3') return;
-  const q = cur(); if (!q) return;
-  const m = trk(q.v, q.t).music[q.s];
-  if (AUD_RETRY < 2 && hasMp3(m.vid)) {                           // 드롭박스가 한 번 튕기는 일이 있어 두 번까지 다시 시도
-    AUD_RETRY++; const at = AUD.currentTime || 0;
-    setTimeout(() => { AUD.src = mp3Url(m.vid) + '&r=' + AUD_RETRY; if (at) AUD.currentTime = at; AUD.play().catch(() => {}); }, 500);
-    return;
-  }
-  USE = 'yt'; const vb = document.querySelector('.video'); if (vb) vb.style.display = '';
-  if (ytReady) YTP.loadVideoById(m.vid);                          // 그래도 안 되면 유튜브로
-});
-AUD.addEventListener('playing', () => { AUD_RETRY = 0; });
-
-/* 다음 곡 미리 물어두기 — 드롭박스는 주소를 두 번 넘겨주므로 미리 연결해두지 않으면 곡이 바뀔 때 끊긴다 */
-let WARMED = null;
-function warmNext() {
+function prepNext() {                                              // 다음 곡을 두 번째 재생기에 미리 받아둔다
   if (USE !== 'mp3' || !Q.list.length) return;
   const nx = Q.list[(Q.i + 1) % Q.list.length]; if (!nx) return;
-  const t = trk(nx.v, nx.t); const m = t && t.music[nx.s]; if (!m || !hasMp3(m.vid) || WARMED === m.vid) return;
-  const d = P.getDuration(), c = P.getCurrentTime();
-  if (!(d > 0) || d - c > 25) return;                             // 끝나기 25초 전부터
-  WARMED = m.vid;
-  fetch(mp3Url(m.vid), { headers: { Range: 'bytes=0-65535' }, cache: 'force-cache' }).catch(() => {});
+  const t = trk(nx.v, nx.t); const m = t && t.music[nx.s];
+  if (!m || !hasMp3(m.vid) || NXT.dataset.vid === m.vid) return;
+  NXT.pause(); NXT.src = mp3Url(m.vid); NXT.dataset.vid = m.vid; NXT.volume = S.vol / 100; NXT.load();
 }
-setInterval(warmNext, 3000);
+setInterval(prepNext, 8000);
 
 /* ══ 잠금화면·알림창 조작 ══ 폰 잠금화면에 앨범 사진·곡명과 이전/재생/다음 버튼을 띄운다 (이어폰 버튼도 여기로 들어온다) */
 function mediaSession(t, m, b) {
