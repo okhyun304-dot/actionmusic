@@ -58,6 +58,7 @@ function route() {
   PAGE = null;
   { const b = $('#mback'); const h = location.hash || '#/';
     b && (b.hidden = ['#', '#/', '#/search', '#/lib'].includes(h)); }   // 아래 탭으로 갈 수 있는 화면에선 뒤로가 필요 없다
+  setTimeout(mtop, 0);                                            // 상단 고정 줄 (화면 그린 뒤)
   const nav = p[0] || 'home';
   $$('[data-nav]').forEach(a => a.classList.toggle('on', a.dataset.nav === nav));
   $('#q').value = nav === 'search' ? (p[1] || '') : $('#q').value;
@@ -151,6 +152,22 @@ function introHtml() {
 /* 곡 한 줄은 어디서나 같은 꼴로: 곡명 - 가수 (대장님이 글 제목에 쓰시는 순서) */
 const songTxt = m => !m ? '' : (m.title || '곡') + (m.artist ? ' - ' + m.artist : '');
 const songHtml = m => !m ? '<i>—</i>' : esc(m.title || '곡') + (m.artist ? ` <i>- ${esc(m.artist)}</i>` : '');
+
+/* ══ 폰 상단 고정 줄 ══ 글 화면엔 그 글의 crumb 이 이미 있으니 그대로 두고,
+   홈·검색·라이브러리·앨범처럼 crumb 이 없는 화면에서는 이 줄이 대신 자리를 지킨다. */
+function mtop() {
+  const el = $('#mtop'); if (!el) return;
+  if ($('.tp .crumb')) { el.hidden = true; return; }               // 글·영상 화면은 자체 줄이 있다
+  const h = location.hash || '#/';
+  const name = h.startsWith('#/search') ? '검색' : h.startsWith('#/lib') ? '내 라이브러리' : h === '#/' || h === '#' ? '행동힙합' : '';
+  const t = LASTREAD && trk(LASTREAD.v, LASTREAD.k);
+  const back = t ? `<a href="#/b/${book(t.v).vol}/${pad2(t.k + 1)}">읽던 글 · ${pad2(t.k + 1)} ${esc(t.title)} ›</a>` : '';
+  if (!name && !back) { el.hidden = true; return; }
+  $('#mtop-t').innerHTML = name ? `<b>${esc(name)}</b>${back ? `<span class="sep"></span>${back}` : ''}` : back;
+  $('#mtop-list').hidden = true;
+  el.hidden = false;
+}
+let LASTREAD = load('lastread', null);                             // 마지막으로 연 글 — 다른 화면에 갔다가 돌아오게
 
 /* ══ 행동영상 ══ 대장님 글로 만든 낭독 영상. 글과는 따로 두고, 글에서는 한 줄 링크로만 넘어간다. */
 function vidList() {
@@ -441,7 +458,7 @@ let PAGE = null;                                                  // 지금 가�
 function select(v, k) { SEL = { v, k }; S.recent = [[v, k], ...S.recent.filter(x => !(x[0] === v && x[1] === k))].slice(0, 16); save(); }
 function viewTrack(v, k) {
   const b = book(v); const t = b.tracks[k]; if (!t) return viewHome();
-  select(v, k); PAGE = { v, k };
+  select(v, k); PAGE = { v, k }; LASTREAD = { v, k }; store('lastread', LASTREAD);
   if (!LIST || !ctxTracks(LIST).tracks.some(x => x.v === v && x.k === k)) LIST = { type: 'album', v };
   renderList();
   const c = cur(); const prev = b.tracks[k - 1], next = b.tracks[k + 1];
