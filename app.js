@@ -578,7 +578,7 @@ function renderList() {
 let USE = 'yt';                                                   // 지금 곡을 무엇으로 트는가
 let AUD_RETRY = 0;
 function mkAudio() {
-  const a = new Audio(); a.preload = 'auto'; a.crossOrigin = null;
+  const a = new Audio(); a.preload = 'none'; a.crossOrigin = null;
   a.addEventListener('loadedmetadata', () => { if (a !== AUD || USE !== 'mp3') return; const q = cur(); if (!q) return; const m = trk(q.v, q.t).music[q.s]; if (m && !m.dur) m.dur = Math.round(a.duration); });
   a.addEventListener('ended', () => { if (a !== AUD || USE !== 'mp3') return; if (S.repeat === 2) { a.currentTime = 0; a.play().catch(() => {}); } else step(1); });
   for (const ev of ['play', 'pause']) a.addEventListener(ev, () => { if (a === AUD && USE === 'mp3') { syncBar(); markRows(); renderBody(); } });
@@ -587,9 +587,9 @@ function mkAudio() {
     if (a !== AUD || USE !== 'mp3') return;
     const q = cur(); if (!q) return;
     const m = trk(q.v, q.t).music[q.s];
-    if (AUD_RETRY < 2 && hasMp3(m.vid)) {                         // 드롭박스가 한 번 튕기는 일이 있어 두 번까지 다시 시도
+    if (hasMp3(m.vid) && AUD_RETRY < 5) {                         // MP3 가 있는 곡은 유튜브로 넘기지 않고 듣던 자리에서 다시 붙는다
       AUD_RETRY++; const at = a.currentTime || 0;
-      setTimeout(() => { a.src = mp3Url(m.vid) + '&r=' + AUD_RETRY; if (at) a.currentTime = at; a.play().catch(() => {}); }, 400);
+      setTimeout(() => { a.src = mp3Url(m.vid) + '&r=' + AUD_RETRY; if (at) { a.addEventListener('loadedmetadata', () => { try { a.currentTime = at; } catch (e) {} }, { once: true }); } a.play().catch(() => {}); }, 400 * AUD_RETRY);
       return;
     }
     USE = 'yt'; const vb = document.querySelector('.video'); if (vb) vb.style.display = '';
@@ -633,7 +633,7 @@ function load_(a, go) {
     if (at) { try { AUD.currentTime = at; } catch (e) {} }
     if (vb) vb.style.display = 'none';                             // MP3 로 트는 동안엔 유튜브 창이 필요 없다
     if (go) AUD.play().catch(() => syncBar());
-    setTimeout(prepNext, 800);                                     // 다음 곡 미리 받기 시작
+    if (NXT.dataset.vid && NXT.dataset.vid !== vid) dropNext();     // 엉뚱한 곡을 미리 받고 있었으면 버린다
   } else {
     USE = 'yt'; AUD.pause(); AUD.removeAttribute('src'); delete AUD.dataset.vid;
     if (vb) vb.style.display = '';
@@ -642,14 +642,35 @@ function load_(a, go) {
        : YTP.cueVideoById({ videoId: vid, startSeconds: at });
   }
 }
-function prepNext() {                                              // 다음 곡을 두 번째 재생기에 미리 받아둔다
-  if (USE !== 'mp3' || !Q.list.length) return;
+function buffered(a) { try { return a.buffered.length ? a.buffered.end(a.buffered.length - 1) - a.currentTime : 0; } catch (e) { return 0; } }
+function prepNext() {
+  /* 다음 곡 미리 받기. 곡 전체를 미리 받으면 지금 듣는 곡의 회선을 뺏겨 오히려 끊긴다
+     (43분짜리 교향곡이 다음일 때 특히). 그래서 끝나기 20초 전부터, 지금 곡이 넉넉히 받아졌을 때만 시작한다. */
+  if (USE !== 'mp3' || !Q.list.length || AUD.paused) return;
+  const d = P.getDuration(), c = P.getCurrentTime();
+  const left = d > 0 ? d - c : 1e9;
+  if (left > 20 || buffered(AUD) < Math.min(left, 15)) return;     // 아직 이르거나, 지금 곡이 덜 받아졌으면 기다린다
   const nx = Q.list[(Q.i + 1) % Q.list.length]; if (!nx) return;
   const t = trk(nx.v, nx.t); const m = t && t.music[nx.s];
   if (!m || !hasMp3(m.vid) || NXT.dataset.vid === m.vid) return;
-  NXT.pause(); NXT.src = mp3Url(m.vid); NXT.dataset.vid = m.vid; NXT.volume = S.vol / 100; NXT.load();
+  NXT.pause(); NXT.preload = 'auto'; NXT.src = mp3Url(m.vid); NXT.dataset.vid = m.vid; NXT.volume = S.vol / 100; NXT.load();
 }
-setInterval(prepNext, 8000);
+function dropNext() { if (NXT.dataset.vid) { NXT.pause(); NXT.removeAttribute('src'); NXT.preload = 'none'; NXT.load(); delete NXT.dataset.vid; } }
+setInterval(prepNext, 2000);
+
+/* 재생이 멎으면(회선이 흔들리면) 같은 자리에서 다시 붙여 본다 */
+let STALL = 0;
+setInterval(() => {
+  if (USE !== 'mp3' || AUD.paused) { STALL = 0; return; }
+  if (AUD.readyState >= 3) { STALL = 0; return; }
+  if (++STALL >= 6) {                                              // 12초 동안 못 나오면
+    STALL = 0; const at = AUD.currentTime || 0; const vid = AUD.dataset.vid; if (!vid) return;
+    dropNext();                                                    // 미리 받던 것부터 멈춰 회선을 비운다
+    AUD.src = mp3Url(vid) + '&s=' + Date.now();
+    AUD.addEventListener('loadedmetadata', () => { try { AUD.currentTime = at; } catch (e) {} }, { once: true });
+    AUD.play().catch(() => {});
+  }
+}, 2000);
 
 /* ══ 잠금화면·알림창 조작 ══ 폰 잠금화면에 앨범 사진·곡명과 이전/재생/다음 버튼을 띄운다 (이어폰 버튼도 여기로 들어온다) */
 function mediaSession(t, m, b) {
