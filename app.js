@@ -161,6 +161,14 @@ function vidList() {
   }
   return out.sort((a, b_) => a.vol.localeCompare(b_.vol) || +a.no - +b_.no);
 }
+function bookVideosHtml(vol) {                                    // 앨범 맨 아래에 붙이는 그 권의 낭독 영상 (책 표지 카드와 다른 가로형)
+  const L = vidList().filter(x => x.vol === vol); if (!L.length) return '';
+  return `<div class="vsec"><div class="h2"><span>이 권의 낭독 영상</span><small><a href="#/v">전체 보기 ›</a></small></div>
+    <div class="vcards">${L.map(x => `<a class="vcard" href="#/v/${x.key}">
+      <span class="vth">${x.t.thumb ? `<img src="${x.t.thumb}" alt="" loading="lazy">` : ''}<i>▷</i></span>
+      <b>${esc(x.t.title)}</b><small>${x.no}</small></a>`).join('')}</div></div>`;
+}
+
 function viewVideos() {
   const L = vidList();
   $('#view').innerHTML = `<div class="pad">
@@ -277,6 +285,7 @@ function viewBook(v, k) {
       <div class="tl-h"><div style="text-align:right">#</div><div>제목</div><div>곡</div><div></div><div style="text-align:right">⏱</div><div></div></div>
       ${trackRows(b.tracks, ctx, { chapters: true })}
       <div class="foot-info">${b.year} · 행동힙합 ${b.vol}권${b.sub ? ' ' + esc(b.sub) : ''} · 글 배준익 · 엮음 오키<br>ⓒ 배준익. 곡은 유튜브에서 재생됩니다.</div>
+      ${bookVideosHtml(b.vol)}
       <div class="h2"><span>배준익의 다른 앨범</span></div><div class="row">${DATA.books.filter(x => x.v !== v).map(cardAlbum).join('')}</div></div>`;
   $('#playall').onclick = () => togglePlayCtx(ctx);
   $('#shufctx').onclick = () => { S.shuffle = true; save(); syncBar(); playCtx(ctx); };
@@ -485,7 +494,8 @@ function openList(ctx) {
       <div class="kind">${ctx.type === 'album' ? '앨범' : '플레이리스트'}</div><h1>${esc(L.name)}</h1>
       <div class="meta"><b>배준익</b> · ${L.tracks.length}곡${total ? ' · ' + fmtLong(total) : ''}${b && ctx.type === 'album' ? ' · ' + b.year : ''}</div></div></div>
     <div class="grid-b" style="--c:${color}"><div class="tools"><button class="playbig" id="playall">${on ? '❚❚' : '▶'}</button><button class="ic${S.shuffle ? ' on' : ''}" id="shufctx" title="셔플">⇄</button><button class="ic" id="morectx" title="더보기">⋯</button></div>
-      <div class="gcards">${cards}</div>${L.tracks.length ? '' : '<div class="empty">비어 있습니다. 꼭지의 ⋯ 메뉴에서 "플레이리스트에 추가"를 누르세요.</div>'}</div>`;
+      <div class="gcards">${cards}</div>${L.tracks.length ? '' : '<div class="empty">비어 있습니다. 꼭지의 ⋯ 메뉴에서 "플레이리스트에 추가"를 누르세요.</div>'}
+      ${ctx.type === 'album' && b ? bookVideosHtml(b.vol) : ''}</div>`;
   $('#playall').onclick = () => togglePlayCtx(ctx);
   $('#shufctx').onclick = () => $('#shuf').click();
   $('#morectx').onclick = e => ctxMenu(e, ctxItems(ctx));

@@ -495,3 +495,9 @@ body[data-albums=row] .alb{padding:10px}body[data-albums=row] .alb b{font-size:1
 .vpage .vacts{display:flex;align-items:center;gap:14px;margin-top:16px}
 .vpage .vdate{font-size:12px;color:var(--dim)}
 @media (max-width:900px){.vcards{grid-template-columns:1fr;gap:14px}}
+
+/* 앨범 맨 아래 낭독 영상 칸 — 책 표지 카드와 다르게 가로로 넓고 선으로 구분 */
+.vsec{margin-top:34px;padding-top:22px;border-top:1px solid var(--line)}
+.vsec .h2 small a{color:var(--dim)}.vsec .h2 small a:hover{color:#fff}
+.vsec .vcards{grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px}
+@media (max-width:900px){.vsec{margin-top:26px}.vsec .vcards{grid-template-columns:repeat(2,1fr);gap:10px}.vsec .vcard b{font-size:13px}}
