@@ -191,7 +191,7 @@ function trackRows(tracks, ctx, opts = {}) {
     if (opts.chapters && (i === 0 || chapterOf(tracks[i - 1]) !== ch)) rows += `<div class="chap">${esc(ch.label)}<b>${esc(ch.title)}</b><a href="#/c/${b.vol}/${ch.ci + 1}">플레이리스트로 보기 ›</a></div>`;
     rows += `<div class="tl${on ? ' on' : ''}${SEL && SEL.v === t.v && SEL.k === t.k ? ' sel' : ''}${dead ? ' dead' : ''}${on && !playing() ? ' paused' : ''}" data-v="${t.v}" data-k="${t.k}">
       <div class="n"><span>${opts.numberByIndex ? i + 1 : t.k + 1}</span><i>▶</i><span class="eq"><b></b><b></b><b></b></span></div>
-      <div class="ti"><img src="${t.thumb}" alt="" loading="lazy"><span style="min-width:0"><b>${esc(t.title)}</b><small>${opts.showBook ? `<a href="#/b/${b.vol}">${esc(b.name)}</a> · ` : ''}<span class="ch">${esc(ch.title)}</span><span class="sg">${songHtml(m)}</span></small></span></div>
+      <div class="ti"><img src="${t.thumb}" alt="" loading="lazy"><span style="min-width:0"><b>${esc(t.title)}</b><small>${opts.showBook ? `<a href="#/b/${b.vol}">${esc(b.name)}</a> · ` : ''}<span class="ch">${esc(ch.title)}</span><span class="sg">${songHtml(m)}</span></small>${vidUrl(b.vol, t.k) ? '<span class="vflag" title="낭독 영상">▷</span>' : ''}</span></div>
       <div class="song">${(t.music.length > 1 ? `<i>${t.music.length}곡 · </i>` : '') + songHtml(m)}</div>
       <button class="like${liked(t.v, t.k) ? ' on' : ''}" title="좋아요">${liked(t.v, t.k) ? '♥' : '♡'}</button>
       <div class="dur">${trackDur(t) ? fmt(trackDur(t)) : ''}</div>
@@ -392,6 +392,7 @@ function viewTrack(v, k) {
     <div class="crumb"><span class="ctx"><a href="#/b/${b.vol}">${esc(b.name)}</a> · <a href="#/c/${b.vol}/${ch.ci + 1}">${esc(ch.label)} ${esc(ch.title)}</a></span><button class="clist" title="목록">≡</button></div>
     <h1><i>${pad2(k + 1)}</i>${esc(t.title)}</h1>
     <div class="acts"><button class="playbig" data-act="play">${c && c.v === v && c.t === k && playing() ? '❚❚' : '▶'}</button><button class="ic like${liked(v, k) ? ' on' : ''}" data-act="like">${liked(v, k) ? '♥' : '♡'}</button><button class="ic" data-act="fs" title="전체화면">⛶</button><button class="ic" data-act="more" title="더보기">⋯</button><span style="margin-left:auto;font-size:12px;color:var(--dim)">${t.date || ''}</span></div>
+    ${vidUrl(b.vol, k) ? `<div class="vidbox"><video id="tv" controls playsinline preload="metadata" poster="${t.thumb && !t.thumb.startsWith('http') ? t.thumb : ''}" src="${vidUrl(b.vol, k)}"></video><div class="vcap">낭독 영상</div></div>` : ''}
     ${t.thumb && !t.thumb.startsWith('http') ? `<img class="hero" src="${t.thumb}" alt="">` : ''}
     ${t.music.length ? `<div class="songs">${t.music.map((m, s) => `<div class="songrow${m.dead ? ' dead' : ''}${c && c.v === v && c.t === k && c.s === s ? ' on' : ''}" data-s="${s}"><img src="https://i.ytimg.com/vi/${m.vid}/mqdefault.jpg" alt=""><div class="st"><b>${songHtml(m)}</b><small>${m.dead ? '유튜브에서 내려간 영상 · 교체 예정' : (m.dur ? fmt(m.dur) : '')}</small></div>${m.lyr ? `<button class="lyb" data-vid="${m.vid}" title="가사">가사</button>` : ''}<span class="pb">${c && c.v === v && c.t === k && c.s === s && playing() ? '❚❚' : '▶'}</span></div><div class="lyrics" id="ly-${m.vid}" hidden></div>`).join('')}</div>` : ''}
     <div class="body">${t.html}</div>
@@ -403,6 +404,7 @@ function viewTrack(v, k) {
     const q = cur(); const s_ = +el.dataset.s;
     if (q && q.v === v && q.t === k && q.s === s_) togglePlay(); else playTrack(v, k, null, s_);   // 듣던 곡을 다시 누르면 멈춤
   });
+  { const tv = R.querySelector('#tv'); if (tv) tv.onplay = () => { if (playing()) togglePlay(); }; }   // 영상 틀면 음악은 멈춤
   R.querySelectorAll('.crumb a').forEach(a => a.onclick = () => { SCROLL_CUR = true; });   // 목록으로 갈 땐 이 글 자리로
   R.querySelector('.crumb .clist').onclick = () => { SCROLL_CUR = true; go(`#/b/${b.vol}`); };
   R.querySelector('[data-act=play]').onclick = () => { const q = cur(); if (q && q.v === v && q.t === k) togglePlay(); else playTrack(v, k); };
@@ -493,6 +495,8 @@ let USE = 'yt';                                                   // 지금 곡�
 document.addEventListener('DOMContentLoaded', () => { const vb = document.querySelector('.video'); if (vb) vb.style.display = 'none'; });
 const mp3Url = vid => (DATA && DATA.mp3base) ? DATA.mp3base + '&preview=' + vid + '.mp3&dl=1' : null;
 const hasMp3 = vid => !!(DATA && DATA.mp3base && DATA.mp3 && DATA.mp3[vid]);
+const vidUrl = (vol, k) => { const n = `${vol}-${pad2(k + 1)}`;
+  return (DATA && DATA.vidbase && DATA.vid && DATA.vid[n]) ? DATA.vidbase + '&preview=' + n + '.mp4&dl=1' : null; };   // 낭독 영상 (드롭박스 앱_영상)
 const pReady = () => USE === 'mp3' ? true : ytReady;
 const P = {
   getCurrentTime: () => USE === 'mp3' ? (AUD.currentTime || 0) : (ytReady && YTP.getCurrentTime ? YTP.getCurrentTime() : 0),
