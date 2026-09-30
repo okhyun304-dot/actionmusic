@@ -24,6 +24,7 @@ const save = () => { for (const k of ['vol', 'muted', 'shuffle', 'repeat', 'like
 
 /* ══ 데이터 ══ */
 const _m = location.search.match(/albums=(\w+)/); if (_m) document.body.dataset.albums = _m[1];
+window.APPV = '3';                                                // 지금 도는 앱 판 번호 (확인용)
 const _p = location.search.match(/[?&]p=([^&]+)/); if (_p) history.replaceState(null, '', location.pathname + '#/' + decodeURIComponent(_p[1]).replace(/^\/+/, ''));   // 책의 링크·QR (?p=b/권/꼭지/곡) → 해시 경로
 const V = (document.querySelector('script[src*="app.js"]')?.src.match(/v=(\d+)/) || [])[1] || Date.now();   // index.html 이 app.js 에 붙인 판 번호 → 데이터도 같은 번호로 (GitHub Pages 10분 캐시 회피)
 fetch('data.json?v=' + V).then(r => r.json()).then(d => {
@@ -624,11 +625,12 @@ function load_(a, go) {
     USE = 'mp3'; AUD_RETRY = 0;
     if (ytReady) YTP.stopVideo();
     if (NXT.dataset.vid === vid && NXT.readyState >= 2) {          // 미리 받아둔 게 있으면 그걸로 바꿔 끼운다 (끊김 없음)
-      const old = AUD; old.pause(); old.removeAttribute('src'); old.load(); delete old.dataset.vid;
+      const old = AUD; old.pause(); old.removeAttribute('src'); old.preload = 'none'; old.load(); delete old.dataset.vid;
       AUD = NXT; NXT = old;
     } else if (AUD.dataset.vid !== vid) {
       AUD.src = mp3Url(vid); AUD.dataset.vid = vid;
     }
+    AUD.preload = 'auto';                                          // 지금 트는 쪽은 앞서서 넉넉히 받아둔다
     AUD.volume = S.vol / 100; AUD.muted = !!S.muted;
     if (at) { try { AUD.currentTime = at; } catch (e) {} }
     if (vb) vb.style.display = 'none';                             // MP3 로 트는 동안엔 유튜브 창이 필요 없다
