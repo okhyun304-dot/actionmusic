@@ -24,7 +24,7 @@ const save = () => { for (const k of ['vol', 'muted', 'shuffle', 'repeat', 'like
 
 /* ══ 데이터 ══ */
 const _m = location.search.match(/albums=(\w+)/); if (_m) document.body.dataset.albums = _m[1];
-window.APPV = '1790767906';                                        // 이 코드의 판 번호 (앱생성.py 가 넣는다)
+window.APPV = '1790767978';                                        // 이 코드의 판 번호 (앱생성.py 가 넣는다)
 /* 폰이 옛 코드를 붙들고 있으면 음악이 끊기는 등 엉뚱한 증상이 난다. 새 판이 올라와 있으면 한 번 새로 받는다. */
 fetch('ver.txt', { cache: 'no-store' }).then(r => r.text()).then(v => {
   v = (v || '').trim();
@@ -777,7 +777,7 @@ function playCur(seek) {
   if (Q.ctx && (!LIST || !sameCtx(LIST)) && Q.ctx.type !== 'artist') { LIST = { type: Q.ctx.type, v: Q.ctx.v, c: Q.ctx.c, id: Q.ctx.id }; renderList(); }
   $('#bar').classList.remove('idle');
   $('#now-img').src = `https://i.ytimg.com/vi/${m.vid}/mqdefault.jpg`;
-  $('#now-song').textContent = (songTxt(m) || '곡') + (USE === 'yt' ? '  ·  유튜브' : ''); $('#now-sub').textContent = `${pad2(q.t + 1)} ${t.title} · ${b.vol}권`;
+  { const el = $('#now-song'); el.dataset.base = songTxt(m) || '곡'; el.textContent = el.dataset.base; } $('#now-sub').textContent = `${pad2(q.t + 1)} ${t.title} · ${b.vol}권`;
   const run = () => { seek ? P.loadVideoById({ videoId: m.vid, startSeconds: seek }) : P.loadVideoById(m.vid); };
   if (pReady()) run(); else pendingPlay = run;
   S.plays[key(q.v, q.t)] = (S.plays[key(q.v, q.t)] || 0) + 1;
@@ -804,6 +804,7 @@ function onState(e) {
 }
 function syncBar() {
   const p = playing(); $('#play').textContent = p ? '❚❚' : '▶';
+  { const el = $('#now-song'); if (el && el.dataset.base) el.textContent = el.dataset.base + (USE === 'yt' && Q.i >= 0 ? '  ·  유튜브' : ''); }   // 무엇으로 트는지 보이게
   mediaState();
   const vb = document.querySelector('.video'); if (vb) vb.style.display = USE === 'mp3' ? 'none' : '';   // MP3 로 틀 땐 유튜브 창을 숨긴다
   for (const id of ['#shuf']) $(id).classList.toggle('on', S.shuffle);
