@@ -181,14 +181,26 @@ function viewVideos() {
 }
 function viewVideo(key) {
   const x = vidList().find(y => y.key === key); if (!x) return viewVideos();
-  const u = vidUrl(x.vol, +x.no - 1);
+  const v = x.b.v, k = +x.no - 1, t = x.t, u = vidUrl(x.vol, k);
+  const c = cur(); const ch = x.b.chapters.find(y => k >= y.from - 1 && k < y.from - 1 + y.n);
+  PAGE = { v, k }; select(v, k);                                  // 글 화면과 같은 취급 — 곡을 틀면 여기서 상태가 갱신된다
   $('#view').innerHTML = `<div class="tp vpage">
-    <div class="crumb"><span class="ctx"><a href="#/v">행동영상</a> · <a href="#/b/${x.vol}">${esc(x.b.name)}</a></span></div>
-    <h1><i>${x.no}</i>${esc(x.t.title)}</h1>
-    <div class="vidbox"><video id="tv" controls playsinline preload="metadata" poster="${x.t.thumb && !x.t.thumb.startsWith('http') ? x.t.thumb : ''}" src="${u}"></video></div>
-    <div class="vacts"><a class="btn" href="#/b/${x.vol}/${x.no}">글 읽기</a>${x.t.date ? `<span class="vdate">${x.t.date}</span>` : ''}</div>
+    <div class="crumb"><span class="ctx"><a href="#/v">행동영상</a> · <a href="#/b/${x.vol}">${esc(x.b.name)}</a>${ch ? ` · <a href="#/c/${x.vol}/${ch.ci + 1}">${esc(ch.label)} ${esc(ch.title)}</a>` : ''}</span></div>
+    <h1><i>${x.no}</i>${esc(t.title)}</h1>
+    <div class="vidbox"><video id="tv" controls playsinline preload="metadata" poster="${t.thumb && !t.thumb.startsWith('http') ? t.thumb : ''}" src="${u}"></video></div>
+    <div class="vacts"><span class="vdate">${t.date || ''}</span><a class="vmore" href="#/b/${x.vol}/${x.no}">글만 따로 보기 ›</a></div>
+    ${t.music.length ? `<div class="songs">${t.music.map((m, si) => `<div class="songrow${m.dead ? ' dead' : ''}${c && c.v === v && c.t === k && c.s === si ? ' on' : ''}" data-s="${si}"><img src="https://i.ytimg.com/vi/${m.vid}/mqdefault.jpg" alt=""><div class="st"><b>${songHtml(m)}</b><small>${m.dead ? '유튜브에서 내려간 영상 · 교체 예정' : (m.dur ? fmt(m.dur) : '')}</small></div>${m.lyr ? `<button class="lyb" data-vid="${m.vid}" title="가사">가사</button>` : ''}<span class="pb">▶</span></div><div class="lyrics" id="ly-${m.vid}" hidden></div>`).join('')}</div>` : ''}
+    <div class="vbodyh">이 영상의 글</div>
+    <div class="body">${t.html}</div>
   </div>`;
+  const R = $('#view');
   const tv = $('#tv'); if (tv) tv.onplay = () => { if (playing()) togglePlay(); };   // 영상 틀면 음악은 멈춤
+  R.querySelectorAll('.songrow').forEach(el => el.onclick = e => {
+    if (e.target.closest('.lyb')) { toggleLyrics(e.target.dataset.vid); return; }
+    const q = cur(); const si = +el.dataset.s;
+    if (q && q.v === v && q.t === k && q.s === si) togglePlay(); else playTrack(v, k, null, si);
+  });
+  renderLib();
 }
 
 /* ══ 오늘의 글 ══ */
