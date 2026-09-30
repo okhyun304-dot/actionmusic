@@ -68,6 +68,7 @@ function route() {
   if (nav === 'liked') return viewLiked();
   if (nav === 'artist') return viewArtist();
   if (nav === 'search') return viewSearch(p[1] || '', p[2] || 'all');
+  if (nav === 'v') return p[1] ? viewVideo(p[1]) : viewVideos();
   if (nav === 'lib') return viewLibMobile();
   viewHome();
 }
@@ -80,6 +81,8 @@ $('#q').addEventListener('focus', () => { if (!location.hash.startsWith('#/searc
 function libItems() {
   const items = [];
   items.push({ type: 'liked', name: '좋아요 표시한 꼭지', sub: `플레이리스트 · ${S.liked.length}곡`, href: '#/liked', ico: '♥', t: S.libTouched.liked || 0 });
+  const nv = Object.keys((DATA && DATA.vid) || {}).length;
+  if (nv) items.push({ type: 'video', name: '행동영상', sub: `영상 · ${nv}편`, href: '#/v', ico: '▷', t: S.libTouched.video || 0 });
   S.pls.forEach(p => items.push({ type: 'pl', id: p.id, name: p.name, sub: `플레이리스트 · ${p.items.length}곡`, href: '#/pl/' + p.id, ico: '♫', cls: 'pl', t: p.t || 0 }));
   DATA.books.forEach(b => items.push({ type: 'album', v: b.v, name: b.name, sub: '앨범 · 배준익', href: '#/b/' + b.vol, img: b.cover, t: S.libTouched[key(b.v, 'a')] || 0 }));
   DATA.books.forEach(b => b.chapters.forEach(c => items.push({ type: 'pl', v: b.v, ci: c.ci, name: c.title, sub: `플레이리스트 · ${b.vol}권 ${c.label}`, href: `#/c/${b.vol}/${c.ci + 1}`, img: b.tracks[c.from - 1].thumb, t: S.libTouched[key(b.v, 'c' + c.ci)] || 0 })));
@@ -147,6 +150,37 @@ function introHtml() {
 /* 곡 한 줄은 어디서나 같은 꼴로: 곡명 - 가수 (대장님이 글 제목에 쓰시는 순서) */
 const songTxt = m => !m ? '' : (m.title || '곡') + (m.artist ? ' - ' + m.artist : '');
 const songHtml = m => !m ? '<i>—</i>' : esc(m.title || '곡') + (m.artist ? ` <i>- ${esc(m.artist)}</i>` : '');
+
+/* ══ 행동영상 ══ 대장님 글로 만든 낭독 영상. 글과는 따로 두고, 글에서는 한 줄 링크로만 넘어간다. */
+function vidList() {
+  const out = [];
+  for (const key of Object.keys((DATA && DATA.vid) || {})) {
+    const [vol, no] = key.split('-'); const b = DATA.books.find(x => x.vol === vol); if (!b) continue;
+    const t = b.tracks[+no - 1]; if (!t) continue;
+    out.push({ key, vol, no, b, t });
+  }
+  return out.sort((a, b_) => a.vol.localeCompare(b_.vol) || +a.no - +b_.no);
+}
+function viewVideos() {
+  const L = vidList();
+  $('#view').innerHTML = `<div class="pad">
+    <div class="h1">행동영상</div>
+    <p class="vintro">대장님 글을 낭독으로 옮긴 영상 ${L.length}편.</p>
+    <div class="vcards">${L.map(x => `<a class="vcard" href="#/v/${x.key}">
+      <span class="vth">${x.t.thumb ? `<img src="${x.t.thumb}" alt="" loading="lazy">` : ''}<i>▷</i></span>
+      <b>${esc(x.t.title)}</b><small>${esc(x.b.name)} · ${x.no}</small></a>`).join('')}</div></div>`;
+}
+function viewVideo(key) {
+  const x = vidList().find(y => y.key === key); if (!x) return viewVideos();
+  const u = vidUrl(x.vol, +x.no - 1);
+  $('#view').innerHTML = `<div class="tp vpage">
+    <div class="crumb"><span class="ctx"><a href="#/v">행동영상</a> · <a href="#/b/${x.vol}">${esc(x.b.name)}</a></span></div>
+    <h1><i>${x.no}</i>${esc(x.t.title)}</h1>
+    <div class="vidbox"><video id="tv" controls playsinline preload="metadata" poster="${x.t.thumb && !x.t.thumb.startsWith('http') ? x.t.thumb : ''}" src="${u}"></video></div>
+    <div class="vacts"><a class="btn" href="#/b/${x.vol}/${x.no}">글 읽기</a>${x.t.date ? `<span class="vdate">${x.t.date}</span>` : ''}</div>
+  </div>`;
+  const tv = $('#tv'); if (tv) tv.onplay = () => { if (playing()) togglePlay(); };   // 영상 틀면 음악은 멈춤
+}
 
 /* ══ 오늘의 글 ══ */
 function todayTrack() {
@@ -363,7 +397,7 @@ function shade(hex, i) { const n = parseInt(hex.slice(1), 16); const f = 0.75 + 
 function viewLibMobile() {
   const all = libItems();
   const albums = all.filter(i => i.type === 'album');
-  const mine = all.filter(i => i.type === 'liked' || (i.type === 'pl' && i.id));
+  const mine = all.filter(i => i.type === 'liked' || i.type === 'video' || (i.type === 'pl' && i.id));
   const chaps = all.filter(i => i.type === 'pl' && i.ci != null);
   const tile = i => `<div class="tile" data-go="${i.href}">${i.img ? `<img src="${i.img}" alt="">` : `<span class="ico">${i.ico}</span>`}<span>${esc(i.name)}<br><small style="color:#b3b3b3;font-weight:400">${esc(i.sub)}</small></span></div>`;
   const sec = (t, list, sub) => !list.length ? '' : `<div class="h2"><span>${esc(t)}</span>${sub ? `<small>${esc(sub)}</small>` : ''}</div><div class="tiles">${list.map(tile).join('')}</div>`;
@@ -392,7 +426,7 @@ function viewTrack(v, k) {
     <div class="crumb"><span class="ctx"><a href="#/b/${b.vol}">${esc(b.name)}</a> · <a href="#/c/${b.vol}/${ch.ci + 1}">${esc(ch.label)} ${esc(ch.title)}</a></span><button class="clist" title="목록">≡</button></div>
     <h1><i>${pad2(k + 1)}</i>${esc(t.title)}</h1>
     <div class="acts"><button class="playbig" data-act="play">${c && c.v === v && c.t === k && playing() ? '❚❚' : '▶'}</button><button class="ic like${liked(v, k) ? ' on' : ''}" data-act="like">${liked(v, k) ? '♥' : '♡'}</button><button class="ic" data-act="fs" title="전체화면">⛶</button><button class="ic" data-act="more" title="더보기">⋯</button><span style="margin-left:auto;font-size:12px;color:var(--dim)">${t.date || ''}</span></div>
-    ${vidUrl(b.vol, k) ? `<div class="vidbox"><video id="tv" controls playsinline preload="metadata" poster="${t.thumb && !t.thumb.startsWith('http') ? t.thumb : ''}" src="${vidUrl(b.vol, k)}"></video><div class="vcap">낭독 영상</div></div>` : ''}
+    ${vidUrl(b.vol, k) ? `<a class="vlink" href="#/v/${b.vol}-${pad2(k + 1)}">▷ 이 글의 낭독 영상 보기</a>` : ''}
     ${t.thumb && !t.thumb.startsWith('http') ? `<img class="hero" src="${t.thumb}" alt="">` : ''}
     ${t.music.length ? `<div class="songs">${t.music.map((m, s) => `<div class="songrow${m.dead ? ' dead' : ''}${c && c.v === v && c.t === k && c.s === s ? ' on' : ''}" data-s="${s}"><img src="https://i.ytimg.com/vi/${m.vid}/mqdefault.jpg" alt=""><div class="st"><b>${songHtml(m)}</b><small>${m.dead ? '유튜브에서 내려간 영상 · 교체 예정' : (m.dur ? fmt(m.dur) : '')}</small></div>${m.lyr ? `<button class="lyb" data-vid="${m.vid}" title="가사">가사</button>` : ''}<span class="pb">${c && c.v === v && c.t === k && c.s === s && playing() ? '❚❚' : '▶'}</span></div><div class="lyrics" id="ly-${m.vid}" hidden></div>`).join('')}</div>` : ''}
     <div class="body">${t.html}</div>
@@ -404,7 +438,6 @@ function viewTrack(v, k) {
     const q = cur(); const s_ = +el.dataset.s;
     if (q && q.v === v && q.t === k && q.s === s_) togglePlay(); else playTrack(v, k, null, s_);   // 듣던 곡을 다시 누르면 멈춤
   });
-  { const tv = R.querySelector('#tv'); if (tv) tv.onplay = () => { if (playing()) togglePlay(); }; }   // 영상 틀면 음악은 멈춤
   R.querySelectorAll('.crumb a').forEach(a => a.onclick = () => { SCROLL_CUR = true; });   // 목록으로 갈 땐 이 글 자리로
   R.querySelector('.crumb .clist').onclick = () => { SCROLL_CUR = true; go(`#/b/${b.vol}`); };
   R.querySelector('[data-act=play]').onclick = () => { const q = cur(); if (q && q.v === v && q.t === k) togglePlay(); else playTrack(v, k); };
