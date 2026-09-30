@@ -24,7 +24,12 @@ const save = () => { for (const k of ['vol', 'muted', 'shuffle', 'repeat', 'like
 
 /* ══ 데이터 ══ */
 const _m = location.search.match(/albums=(\w+)/); if (_m) document.body.dataset.albums = _m[1];
-window.APPV = '3';                                                // 지금 도는 앱 판 번호 (확인용)
+window.APPV = '1790767906';                                        // 이 코드의 판 번호 (앱생성.py 가 넣는다)
+/* 폰이 옛 코드를 붙들고 있으면 음악이 끊기는 등 엉뚱한 증상이 난다. 새 판이 올라와 있으면 한 번 새로 받는다. */
+fetch('ver.txt', { cache: 'no-store' }).then(r => r.text()).then(v => {
+  v = (v || '').trim();
+  if (v && v !== window.APPV && !location.search.includes('v=' + v)) location.replace(location.pathname + '?v=' + v + location.hash);
+}).catch(() => {});
 const _p = location.search.match(/[?&]p=([^&]+)/); if (_p) history.replaceState(null, '', location.pathname + '#/' + decodeURIComponent(_p[1]).replace(/^\/+/, ''));   // 책의 링크·QR (?p=b/권/꼭지/곡) → 해시 경로
 const V = (document.querySelector('script[src*="app.js"]')?.src.match(/v=(\d+)/) || [])[1] || Date.now();   // index.html 이 app.js 에 붙인 판 번호 → 데이터도 같은 번호로 (GitHub Pages 10분 캐시 회피)
 fetch('data.json?v=' + V).then(r => r.json()).then(d => {
@@ -772,7 +777,7 @@ function playCur(seek) {
   if (Q.ctx && (!LIST || !sameCtx(LIST)) && Q.ctx.type !== 'artist') { LIST = { type: Q.ctx.type, v: Q.ctx.v, c: Q.ctx.c, id: Q.ctx.id }; renderList(); }
   $('#bar').classList.remove('idle');
   $('#now-img').src = `https://i.ytimg.com/vi/${m.vid}/mqdefault.jpg`;
-  $('#now-song').textContent = songTxt(m) || '곡'; $('#now-sub').textContent = `${pad2(q.t + 1)} ${t.title} · ${b.vol}권`;
+  $('#now-song').textContent = (songTxt(m) || '곡') + (USE === 'yt' ? '  ·  유튜브' : ''); $('#now-sub').textContent = `${pad2(q.t + 1)} ${t.title} · ${b.vol}권`;
   const run = () => { seek ? P.loadVideoById({ videoId: m.vid, startSeconds: seek }) : P.loadVideoById(m.vid); };
   if (pReady()) run(); else pendingPlay = run;
   S.plays[key(q.v, q.t)] = (S.plays[key(q.v, q.t)] || 0) + 1;
