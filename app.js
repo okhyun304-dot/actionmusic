@@ -90,7 +90,8 @@ function libItems() {
 }
 function renderLib() {
   const q = ($('#libq').value || '').toLowerCase();
-  let items = libItems().filter(i => S.libf === 'album' ? i.type === 'album' : i.type !== 'album').filter(i => !q || i.name.toLowerCase().includes(q));
+  let items = libItems().filter(i => S.libf === 'album' ? (i.type === 'album' || i.type === 'video') : i.type !== 'album').filter(i => !q || i.name.toLowerCase().includes(q));
+  items = [...items.filter(i => i.type !== 'video'), ...items.filter(i => i.type === 'video')];   // 행동영상은 늘 맨 아래
   const c = cur(); const h = location.hash.split('/').slice(0, 3).join('/');
   let html = '', lastV = null;
   for (const i of items) {
@@ -406,7 +407,8 @@ function shade(hex, i) { const n = parseInt(hex.slice(1), 16); const f = 0.75 + 
 function viewLibMobile() {
   const all = libItems();
   const albums = all.filter(i => i.type === 'album');
-  const mine = all.filter(i => i.type === 'liked' || i.type === 'video' || (i.type === 'pl' && i.id));
+  const mine = all.filter(i => i.type === 'liked' || (i.type === 'pl' && i.id));
+  const vids = all.filter(i => i.type === 'video');
   const chaps = all.filter(i => i.type === 'pl' && i.ci != null);
   const tile = i => `<div class="tile" data-go="${i.href}">${i.img ? `<img src="${i.img}" alt="">` : `<span class="ico">${i.ico}</span>`}<span>${esc(i.name)}<br><small style="color:#b3b3b3;font-weight:400">${esc(i.sub)}</small></span></div>`;
   const sec = (t, list, sub) => !list.length ? '' : `<div class="h2"><span>${esc(t)}</span>${sub ? `<small>${esc(sub)}</small>` : ''}</div><div class="tiles">${list.map(tile).join('')}</div>`;
@@ -417,6 +419,7 @@ function viewLibMobile() {
     const g = chaps.filter(i => i.v === b.v);
     html += sec(esc(b.name), g, `장 ${g.length}개`);
   }
+  html += sec('행동영상', vids);
   $('#view').innerHTML = `<div class="pad">${html}</div>`;
   bindCards();
 }
