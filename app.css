@@ -516,13 +516,12 @@ body[data-albums=row] .alb{padding:10px}body[data-albums=row] .alb b{font-size:1
 /* 전체화면 읽기 — 그 꼭지 사진을 배경으로 어둡게 깔고 흰 글씨 */
 #fs-bg{position:fixed;inset:0;z-index:0;background-size:cover;background-position:center 20%;filter:blur(18px) saturate(.75);transform:scale(1.1);opacity:.42}
 #fs-bg::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.55) 0,rgba(0,0,0,.82) 42%,rgba(0,0,0,.94) 100%)}
-#fs-head{position:relative;z-index:1;max-width:760px;margin:0 auto;padding:74px 24px 26px;color:#fff}
-#fs-head .fsc{font-size:13px;letter-spacing:.02em;color:#ffffffa6;font-weight:500}
-#fs-head h2{margin:8px 0 0;font-size:clamp(26px,3.4vw,40px);font-weight:900;line-height:1.25;letter-spacing:-.02em;
+#fs-head{position:relative;z-index:1;max-width:760px;margin:0 auto;padding:18px 24px 26px;color:#fff}
+#fs-head h2{margin:0;font-size:clamp(26px,3.4vw,40px);font-weight:900;line-height:1.25;letter-spacing:-.02em;
   text-shadow:0 2px 18px rgba(0,0,0,.6)}
 #fs-in{position:relative;z-index:1}
 #fs-in .body{color:#f2f2f2;text-shadow:0 1px 14px rgba(0,0,0,.55)}
-#fs-close{z-index:2;width:44px;height:44px;border-radius:50%;background:rgba(0,0,0,.45);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;font-size:26px;top:14px;right:16px}
+#fs-close{position:static;width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;font-size:24px;flex:none;opacity:.9}
 @media (max-width:900px){#fs-head{padding:64px 18px 20px}#fs-in{padding:0}#fs-in .body{padding:0 18px}}
 
 /* 폰 상단 고정 줄 */
@@ -536,3 +535,9 @@ body[data-albums=row] .alb{padding:10px}body[data-albums=row] .alb b{font-size:1
   #mtop #mtop-t a{color:var(--dim)}
   .ihero{padding-top:22px}
 }
+
+/* 전체화면 읽기 — 맨 위 줄은 늘 붙어 있는다 */
+#fs-bar{position:sticky;top:0;z-index:3;display:flex;align-items:center;gap:12px;min-height:58px;padding:0 16px 0 24px;
+  background:rgba(0,0,0,.55);backdrop-filter:blur(12px);border-bottom:1px solid #ffffff1f}
+#fs-crumb{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px;color:#ffffffbf;font-weight:500}
+@media (max-width:900px){#fs-bar{padding:0 12px 0 18px;min-height:54px}#fs-head{padding:16px 18px 20px}}

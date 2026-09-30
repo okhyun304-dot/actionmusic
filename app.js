@@ -503,7 +503,8 @@ function fullscreen(t) {                                           // 전체화�
   const fs = $('#fs'); fs.hidden = false;
   fs.style.setProperty('--c', b.color);
   $('#fs-bg').style.backgroundImage = bg ? `url("${bg}")` : 'none';
-  $('#fs-head').innerHTML = `<div class="fsc">${esc(b.name)} · ${esc(t.chapter)}</div><h2>${pad2(t.k + 1)} ${esc(t.title)}</h2>`;
+  $('#fs-crumb').textContent = `${b.name} · ${t.chapter}`;         // 위에 늘 붙어 있는 줄
+  $('#fs-head').innerHTML = `<h2>${pad2(t.k + 1)} ${esc(t.title)}</h2>`;
   $('#fs-in').innerHTML = `<div class="body">${t.html}</div>`;
   fs.scrollTop = 0;
 }
