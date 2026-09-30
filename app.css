@@ -501,3 +501,9 @@ body[data-albums=row] .alb{padding:10px}body[data-albums=row] .alb b{font-size:1
 .vsec .h2 small a{color:var(--dim)}.vsec .h2 small a:hover{color:#fff}
 .vsec .vcards{grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px}
 @media (max-width:900px){.vsec{margin-top:26px}.vsec .vcards{grid-template-columns:repeat(2,1fr);gap:10px}.vsec .vcard b{font-size:13px}}
+
+.vhead{display:flex;align-items:center;gap:22px;margin:0 0 24px}
+.vhead img{width:150px;height:150px;border-radius:8px;flex:none;box-shadow:0 12px 36px rgba(0,0,0,.7)}
+.vhead .kind{font-size:12px;font-weight:700;color:var(--dim)}
+.vhead .vintro{margin:0}
+@media (max-width:900px){.vhead{gap:14px}.vhead img{width:96px;height:96px}}

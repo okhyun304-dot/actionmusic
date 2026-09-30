@@ -82,7 +82,7 @@ function libItems() {
   const items = [];
   items.push({ type: 'liked', name: '좋아요 표시한 꼭지', sub: `플레이리스트 · ${S.liked.length}곡`, href: '#/liked', ico: '♥', t: S.libTouched.liked || 0 });
   const nv = Object.keys((DATA && DATA.vid) || {}).length;
-  if (nv) items.push({ type: 'video', name: '행동영상', sub: `영상 · ${nv}편`, href: '#/v', ico: '▷', t: S.libTouched.video || 0 });
+  if (nv) items.push({ type: 'video', name: '행동영상', sub: `영상 · ${nv}편`, href: '#/v', img: 'cover-video.jpg', t: S.libTouched.video || 0 });
   S.pls.forEach(p => items.push({ type: 'pl', id: p.id, name: p.name, sub: `플레이리스트 · ${p.items.length}곡`, href: '#/pl/' + p.id, ico: '♫', cls: 'pl', t: p.t || 0 }));
   DATA.books.forEach(b => items.push({ type: 'album', v: b.v, name: b.name, sub: '앨범 · 배준익', href: '#/b/' + b.vol, img: b.cover, t: S.libTouched[key(b.v, 'a')] || 0 }));
   DATA.books.forEach(b => b.chapters.forEach(c => items.push({ type: 'pl', v: b.v, ci: c.ci, name: c.title, sub: `플레이리스트 · ${b.vol}권 ${c.label}`, href: `#/c/${b.vol}/${c.ci + 1}`, img: b.tracks[c.from - 1].thumb, t: S.libTouched[key(b.v, 'c' + c.ci)] || 0 })));
@@ -173,8 +173,8 @@ function bookVideosHtml(vol) {                                    // 앨범 맨 
 function viewVideos() {
   const L = vidList();
   $('#view').innerHTML = `<div class="pad">
-    <div class="h1">행동영상</div>
-    <p class="vintro">대장님 글을 낭독으로 옮긴 영상 ${L.length}편.</p>
+    <div class="vhead"><img src="cover-video.jpg" alt=""><div><div class="kind">영상</div><div class="h1" style="margin:4px 0 8px">행동영상</div>
+      <p class="vintro">대장님 글을 낭독으로 옮긴 영상 ${L.length}편.</p></div></div>
     <div class="vcards">${L.map(x => `<a class="vcard" href="#/v/${x.key}">
       <span class="vth">${x.t.thumb ? `<img src="${x.t.thumb}" alt="" loading="lazy">` : ''}<i>▷</i></span>
       <b>${esc(x.t.title)}</b><small>${esc(x.b.name)} · ${x.no}</small></a>`).join('')}</div></div>`;
