@@ -649,7 +649,8 @@ function prepNext() {
   if (USE !== 'mp3' || !Q.list.length || AUD.paused) return;
   const d = P.getDuration(), c = P.getCurrentTime();
   const left = d > 0 ? d - c : 1e9;
-  if (left > 20 || buffered(AUD) < Math.min(left, 15)) return;     // 아직 이르거나, 지금 곡이 덜 받아졌으면 기다린다
+  if (left > 20) return;                                          // 끝나기 20초 전부터
+  if (buffered(AUD) + 3 < left) return;                           // 지금 곡의 남은 부분이 아직 안 받아졌으면 회선을 나눠 쓰지 않는다
   const nx = Q.list[(Q.i + 1) % Q.list.length]; if (!nx) return;
   const t = trk(nx.v, nx.t); const m = t && t.music[nx.s];
   if (!m || !hasMp3(m.vid) || NXT.dataset.vid === m.vid) return;
