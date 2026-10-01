@@ -24,7 +24,7 @@ const save = () => { for (const k of ['vol', 'muted', 'shuffle', 'repeat', 'like
 
 /* ══ 데이터 ══ */
 const _m = location.search.match(/albums=(\w+)/); if (_m) document.body.dataset.albums = _m[1];
-window.APPV = '1790841450';                                        // 이 코드의 판 번호 (앱생성.py 가 넣는다)
+window.APPV = '1790844081';                                        // 이 코드의 판 번호 (앱생성.py 가 넣는다)
 /* 폰이 옛 코드를 붙들고 있으면 음악이 끊기는 등 엉뚱한 증상이 난다. 새 판이 올라와 있으면 한 번 새로 받는다. */
 fetch('ver.txt', { cache: 'no-store' }).then(r => r.text()).then(v => {
   v = (v || '').trim();
@@ -622,11 +622,12 @@ function mkAudio() {
     if (a !== AUD || USE !== 'mp3') return;
     const q = cur(); if (!q) return;
     const m = trk(q.v, q.t).music[q.s];
-    logit('MP3 끊김', { vid: m.vid, code: a.error && a.error.code, net: a.networkState, at: a.currentTime, try: AUD_RETRY + 1 });
+    logit('MP3 끊김', { vid: m.vid, code: a.error && a.error.code, net: a.networkState, at: LAST_T, try: AUD_RETRY + 1 });
     if (hasMp3(m.vid)) {                                          // MP3 가 있는 곡은 유튜브로 넘기지 않는다 (유튜브가 더 잘 끊긴다)
-      AUD_RETRY++; const at = a.currentTime || 0;
-      if (AUD_RETRY === 3) toast('연결이 불안정합니다. 다시 잇는 중…');
-      setTimeout(() => { a.src = mp3Url(m.vid) + '&r=' + AUD_RETRY; if (at) { a.addEventListener('loadedmetadata', () => { try { a.currentTime = at; } catch (e) {} }, { once: true }); } a.play().catch(() => {}); }, Math.min(400 * AUD_RETRY, 4000));
+      AUD_RETRY++;
+      if (AUD_RETRY === 1) resume(a, m.vid, LAST_T, false);        // 한 번은 그냥 다시 붙여 보고
+      else if (AUD_RETRY <= 3) resume(a, m.vid, LAST_T, true);     // 안 되면 곡을 통째로 받아서 메모리에서 잇는다
+      else logit('포기', { vid: m.vid, at: LAST_T });
       return;
     }
     logit('유튜브로 넘어감 (MP3 없음)', { vid: m.vid });
@@ -635,6 +636,27 @@ function mkAudio() {
   });
   return a;
 }
+/* 끊긴 자리에서 다시 잇기. whole=true 면 곡을 통째로 받아 메모리에서 튼다 — 그 뒤로는 회선이 끊겨도 끝까지 나온다. */
+let LAST_T = 0, BLOBS = {};
+function resume(a, vid, at, whole) {
+  const go = (src) => {
+    a.src = src; a.load();
+    const seek = () => { try { if (at > 1) a.currentTime = at; } catch (e) {} a.play().catch(() => {}); };
+    a.addEventListener('loadedmetadata', seek, { once: true });
+    setTimeout(() => { if (a.readyState === 0) a.play().catch(() => {}); }, 1500);
+  };
+  if (!whole) { setTimeout(() => go(mp3Url(vid) + '&t=' + Date.now()), 500); return; }
+  if (BLOBS[vid]) { logit('받아둔 것으로 이음', { vid, at }); go(BLOBS[vid]); return; }
+  toast('연결이 끊겨 곡을 받는 중…');
+  logit('통째로 받는 중', { vid, at });
+  fetch(mp3Url(vid)).then(r => r.blob()).then(b => {
+    for (const k of Object.keys(BLOBS)) if (k !== vid) { URL.revokeObjectURL(BLOBS[k]); delete BLOBS[k]; }
+    BLOBS[vid] = URL.createObjectURL(b);
+    logit('다 받음 → 이어서 재생', { vid, at });
+    go(BLOBS[vid]);
+  }).catch(() => { logit('받기 실패', { vid }); setTimeout(() => go(mp3Url(vid) + '&t=' + Date.now()), 1500); });
+}
+setInterval(() => { if (USE === 'mp3' && !AUD.paused && AUD.currentTime > 0) LAST_T = AUD.currentTime; }, 500);
 let AUD = mkAudio(), NXT = mkAudio();                             // AUD = 지금 나오는 것, NXT = 다음 곡 미리 받는 것
 document.addEventListener('DOMContentLoaded', () => { const vb = document.querySelector('.video'); if (vb) vb.style.display = 'none'; });
 const mp3Url = vid => (DATA && DATA.mp3base) ? DATA.mp3base + '&preview=' + vid + '.mp3&dl=1' : null;
@@ -659,7 +681,7 @@ function load_(a, go) {
   const vid = typeof a === 'string' ? a : a.videoId, at = (typeof a === 'object' && a.startSeconds) || 0;
   const vb = document.querySelector('.video');
   if (hasMp3(vid)) {
-    USE = 'mp3'; AUD_RETRY = 0;
+    USE = 'mp3'; AUD_RETRY = 0; LAST_T = at || 0;
     if (ytReady) YTP.stopVideo();
     if (NXT.dataset.vid === vid && NXT.readyState >= 2) {          // 미리 받아둔 게 있으면 그걸로 바꿔 끼운다 (끊김 없음)
       const old = AUD; old.pause(); old.removeAttribute('src'); old.preload = 'none'; old.load(); delete old.dataset.vid;
@@ -707,9 +729,7 @@ setInterval(() => {
     STALL = 0; const at = AUD.currentTime || 0; const vid = AUD.dataset.vid; if (!vid) return;
     logit('12초 멎음 → 다시 연결', { vid, at, net: AUD.networkState });
     dropNext();                                                    // 미리 받던 것부터 멈춰 회선을 비운다
-    AUD.src = mp3Url(vid) + '&s=' + Date.now();
-    AUD.addEventListener('loadedmetadata', () => { try { AUD.currentTime = at; } catch (e) {} }, { once: true });
-    AUD.play().catch(() => {});
+    resume(AUD, vid, at, true);
   }
 }, 2000);
 
