@@ -24,7 +24,7 @@ const save = () => { for (const k of ['vol', 'muted', 'shuffle', 'repeat', 'like
 
 /* ══ 데이터 ══ */
 const _m = location.search.match(/albums=(\w+)/); if (_m) document.body.dataset.albums = _m[1];
-window.APPV = '1790813476';                                        // 이 코드의 판 번호 (앱생성.py 가 넣는다)
+window.APPV = '1790815089';                                        // 이 코드의 판 번호 (앱생성.py 가 넣는다)
 /* 폰이 옛 코드를 붙들고 있으면 음악이 끊기는 등 엉뚱한 증상이 난다. 새 판이 올라와 있으면 한 번 새로 받는다. */
 fetch('ver.txt', { cache: 'no-store' }).then(r => r.text()).then(v => {
   v = (v || '').trim();
@@ -377,7 +377,7 @@ function viewArtist() {
   $('#view').innerHTML = `<div class="hero artist" style="--img:url(${DATA.books[0].cover});--c:#222"><div>
       <div class="kind">아티스트</div><h1>배준익</h1><div class="meta"><span>행동주의자 · ${DATA.books.length}개 앨범 · ${DATA.books.reduce((a, b) => a + b.tracks.length, 0)}곡</span></div></div></div>
     <div class="under" style="--c:#222">${toolsHtml(ctx)}
-      <div class="h2"><span>${top.length ? '많이 들은 꼭지' : '인기 꼭지'}</span></div>
+      <div class="h2"><span>많이 들은 곡</span></div>
       ${trackRows(tracks, { type: 'album', v: 0 }, { numberByIndex: true, showBook: true })}
       <div class="h2"><span>디스코그래피</span></div><div class="row">${DATA.books.map(cardAlbum).join('')}</div>
       <div class="h2"><span>플레이리스트</span></div><div class="row">${DATA.books.flatMap(b => b.chapters.map(c => cardChapter(b, c))).join('')}</div>

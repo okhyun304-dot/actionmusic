@@ -562,3 +562,5 @@ body[data-albums=row] .alb{padding:10px}body[data-albums=row] .alb b{font-size:1
   .ihero p{margin:0 0 18px;line-height:1.9}
   .ihero .imeta{margin-top:24px;margin-bottom:20px}
 }
+
+.ihero .fbtns{gap:14px}      /* 두 버튼이 붙어 보여서 띄움 */
