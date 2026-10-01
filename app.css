@@ -546,3 +546,19 @@ body[data-albums=row] .alb{padding:10px}body[data-albums=row] .alb b{font-size:1
 .about p:last-child{margin-bottom:0}
 .about .vols{color:#e6e6e6;font-weight:700;letter-spacing:-.01em}
 @media (max-width:900px){.about{padding:18px;font-size:14px}}
+
+/* 홈 소개 — 숨 쉴 자리를 넉넉히 */
+.ihero{padding:74px 40px 64px}
+.ihero .itx{max-width:720px}
+.ihero .ftag{font-size:13px;letter-spacing:.02em;color:#9a9a9a}
+.ihero h1{margin:10px 0 26px}
+.ihero .ilead{font-size:23px;line-height:1.75;margin:0 0 30px}
+.ihero p{margin:0 0 22px;line-height:1.95}
+.ihero .imeta{margin-top:30px;margin-bottom:26px}
+@media (max-width:900px){
+  .ihero{padding:40px 18px 44px}
+  .ihero h1{margin:8px 0 20px}
+  .ihero .ilead{font-size:18px;line-height:1.7;margin-bottom:24px}
+  .ihero p{margin:0 0 18px;line-height:1.9}
+  .ihero .imeta{margin-top:24px;margin-bottom:20px}
+}

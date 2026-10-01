@@ -24,7 +24,7 @@ const save = () => { for (const k of ['vol', 'muted', 'shuffle', 'repeat', 'like
 
 /* ══ 데이터 ══ */
 const _m = location.search.match(/albums=(\w+)/); if (_m) document.body.dataset.albums = _m[1];
-window.APPV = '1790813326';                                        // 이 코드의 판 번호 (앱생성.py 가 넣는다)
+window.APPV = '1790813476';                                        // 이 코드의 판 번호 (앱생성.py 가 넣는다)
 /* 폰이 옛 코드를 붙들고 있으면 음악이 끊기는 등 엉뚱한 증상이 난다. 새 판이 올라와 있으면 한 번 새로 받는다. */
 fetch('ver.txt', { cache: 'no-store' }).then(r => r.text()).then(v => {
   v = (v || '').trim();
@@ -142,7 +142,6 @@ function introHtml() {
   const ns = DATA.books.reduce((a, b) => a + b.tracks.reduce((x, t) => x + t.music.length, 0), 0);
   const dur = DATA.books.reduce((a, b) => a + b.tracks.reduce((x, t) => x + trackDur(t), 0), 0);
   return `<div class="ihero">
-    <img class="imark" src="icon-512.png" alt="">
     <div class="itx">
       <div class="ftag">행동주의자 배준익님의 글과 음악</div>
       <h1>행동힙합</h1>
@@ -480,7 +479,7 @@ function viewTrack(v, k) {
   $('#view').innerHTML = `<div class="tp">
     <div class="crumb"><span class="ctx"><a href="#/b/${b.vol}">${esc(b.name)}</a> · <a href="#/c/${b.vol}/${ch.ci + 1}">${esc(ch.label)} ${esc(ch.title)}</a></span><button class="clist" title="목록">≡</button></div>
     <h1><i>${pad2(k + 1)}</i>${esc(t.title)}</h1>
-    <div class="acts"><button class="playbig" data-act="play">${c && c.v === v && c.t === k && playing() ? '❚❚' : '▶'}</button><button class="ic like${liked(v, k) ? ' on' : ''}" data-act="like">${liked(v, k) ? '♥' : '♡'}</button><button class="ic" data-act="fs" title="전체화면">⛶</button><button class="ic" data-act="more" title="더보기">⋯</button><span style="margin-left:auto;font-size:12px;color:var(--dim)">${t.date || ''}</span></div>
+    <div class="acts"><button class="playbig" data-act="play">${c && c.v === v && c.t === k && playing() ? '❚❚' : '▶'}</button><button class="ic${S.shuffle ? ' on' : ''}" data-act="shuffle" title="섞어 듣기">⇄</button><button class="ic like${liked(v, k) ? ' on' : ''}" data-act="like">${liked(v, k) ? '♥' : '♡'}</button><button class="ic" data-act="fs" title="전체화면">⛶</button><button class="ic" data-act="more" title="더보기">⋯</button><span style="margin-left:auto;font-size:12px;color:var(--dim)">${t.date || ''}</span></div>
     ${vidUrl(b.vol, k) ? `<a class="vlink" href="#/v/${b.vol}-${pad2(k + 1)}">▷ 이 글의 낭독 영상 보기</a>` : ''}
     ${t.thumb && !t.thumb.startsWith('http') ? `<img class="hero" src="${t.thumb}" alt="">` : ''}
     ${t.music.length ? `<div class="songs">${t.music.map((m, s) => `<div class="songrow${m.dead ? ' dead' : ''}${c && c.v === v && c.t === k && c.s === s ? ' on' : ''}" data-s="${s}"><img src="https://i.ytimg.com/vi/${m.vid}/mqdefault.jpg" alt=""><div class="st"><b>${songHtml(m)}</b><small>${m.dead ? '유튜브에서 내려간 영상 · 교체 예정' : (m.dur ? fmt(m.dur) : '')}</small></div>${m.lyr ? `<button class="lyb" data-vid="${m.vid}" title="가사">가사</button>` : ''}<span class="pb">${c && c.v === v && c.t === k && c.s === s && playing() ? '❚❚' : '▶'}</span></div><div class="lyrics" id="ly-${m.vid}" hidden></div>`).join('')}</div>` : ''}
@@ -496,6 +495,7 @@ function viewTrack(v, k) {
   R.querySelectorAll('.crumb a').forEach(a => a.onclick = () => { SCROLL_CUR = true; });   // 목록으로 갈 땐 이 글 자리로
   R.querySelector('.crumb .clist').onclick = () => { SCROLL_CUR = true; go(`#/b/${b.vol}`); };
   R.querySelector('[data-act=play]').onclick = () => { const q = cur(); if (q && q.v === v && q.t === k) togglePlay(); else playTrack(v, k); };
+  R.querySelector('[data-act=shuffle]').onclick = e => { $('#shuf').click(); e.currentTarget.classList.toggle('on', S.shuffle); toast(S.shuffle ? '섞어 듣기' : '순서대로 듣기'); };
   R.querySelector('[data-act=like]').onclick = () => toggleLike(v, k);
   R.querySelector('[data-act=fs]').onclick = () => fullscreen(t);
   R.querySelector('[data-act=more]').onclick = e => ctxMenu(e, ctxItems({ type: 'track', v, k }));
@@ -509,6 +509,7 @@ function renderBody() {                                            // 꼭지 페
     const cur_ = !!on && +el.dataset.s === q.s; el.classList.toggle('on', cur_);
     const pb2 = el.querySelector('.pb'); if (pb2) pb2.textContent = cur_ && p ? '❚❚' : '▶';       // 띠 안의 버튼도 같이 바뀐다
   });
+  const sh = $('.tp [data-act=shuffle]'); if (sh) sh.classList.toggle('on', S.shuffle);
   const lk = $('.tp [data-act=like]'); if (lk) { lk.classList.toggle('on', liked(PAGE.v, PAGE.k)); lk.textContent = liked(PAGE.v, PAGE.k) ? '♥' : '♡'; }
 }
 function renderQueue() {}
