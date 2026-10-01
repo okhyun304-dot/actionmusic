@@ -185,7 +185,7 @@ img{display:block}
 .hero.artist{background-image:linear-gradient(transparent 0,rgba(0,0,0,.65) 100%),var(--img);background-size:cover;background-position:center 30%;min-height:300px;align-items:flex-end}
 .hero.artist h1{font-size:clamp(40px,7vw,84px)}
 .verified{font-size:13px;display:flex;align-items:center;gap:6px}.verified i{background:#3d91f4;color:#fff;border-radius:50%;width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-style:normal}
-.about{background:var(--panel2);border-radius:8px;padding:20px;max-width:560px;color:var(--dim);line-height:1.8;font-size:14px;user-select:text}
+.about{background:var(--panel2);border-radius:10px;padding:24px;max-width:620px;color:var(--dim);line-height:1.85;font-size:14px;user-select:text;word-break:keep-all}
 .about b{color:#fff;display:block;font-size:16px;margin-bottom:6px}
 
 /* ── 재생 바 ── */
@@ -541,3 +541,8 @@ body[data-albums=row] .alb{padding:10px}body[data-albums=row] .alb b{font-size:1
   background:rgba(0,0,0,.55);backdrop-filter:blur(12px);border-bottom:1px solid #ffffff1f}
 #fs-crumb{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px;color:#ffffffbf;font-weight:500}
 @media (max-width:900px){#fs-bar{padding:0 12px 0 18px;min-height:54px}#fs-head{padding:16px 18px 20px}}
+
+.about p{margin:0 0 14px}
+.about p:last-child{margin-bottom:0}
+.about .vols{color:#e6e6e6;font-weight:700;letter-spacing:-.01em}
+@media (max-width:900px){.about{padding:18px;font-size:14px}}

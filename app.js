@@ -24,7 +24,7 @@ const save = () => { for (const k of ['vol', 'muted', 'shuffle', 'repeat', 'like
 
 /* ══ 데이터 ══ */
 const _m = location.search.match(/albums=(\w+)/); if (_m) document.body.dataset.albums = _m[1];
-window.APPV = '1790767978';                                        // 이 코드의 판 번호 (앱생성.py 가 넣는다)
+window.APPV = '1790813326';                                        // 이 코드의 판 번호 (앱생성.py 가 넣는다)
 /* 폰이 옛 코드를 붙들고 있으면 음악이 끊기는 등 엉뚱한 증상이 난다. 새 판이 올라와 있으면 한 번 새로 받는다. */
 fetch('ver.txt', { cache: 'no-store' }).then(r => r.text()).then(v => {
   v = (v || '').trim();
@@ -151,7 +151,7 @@ function introHtml() {
       <p>가족과 사랑, 이별과 그리움,<br>사업과 실패, 고통과 생존.<br>그때 들었던 음악과 그 안에 남은 생각과 감정을 글로 기록했다.</p>
       <p>『행동힙합』은 그 글과 음악을 여섯 권으로 엮은 기록이다.<br>음악을 들으며 한 사람이 지나온 시간을 함께 읽을 수 있다.</p>
       <div class="imeta">${DATA.books.length}권 · ${nt}편 · ${ns}곡${dur ? ' · ' + fmtLong(dur) : ''}</div>
-      <div class="fbtns"><a class="btn" href="#/artist">지은이</a><a class="btn ghost" href="#/search">여섯 권 둘러보기</a></div>
+      <div class="fbtns"><a class="btn" href="#/artist">행동주의자</a><a class="btn ghost" href="#/search">여섯 권 둘러보기</a></div>
     </div></div>`;
 }
 
@@ -383,7 +383,15 @@ function viewArtist() {
       <div class="h2"><span>디스코그래피</span></div><div class="row">${DATA.books.map(cardAlbum).join('')}</div>
       <div class="h2"><span>플레이리스트</span></div><div class="row">${DATA.books.flatMap(b => b.chapters.map(c => cardChapter(b, c))).join('')}</div>
       <div class="h2"><span>소개</span></div>
-      <div class="about"><b>행동주의자 배준익 님</b>사업가. 새벽에 일어나 글을 쓰시고, 음악을 들으시고, 텔레그램에 남기신다. 「행동힙합」은 그 글과 음악을 오키가 여섯 권으로 엮은 것이다. 1권 태도 · 2권 기억 · 3권 생존 · 4권 사랑 · 5권 힙합 · 6권 명반.</div></div>`;
+      <div class="about"><b>행동주의자 배준익 님</b>
+        <p>오랜 시간 사업을 하고, 가족을 이루고, 사람을 만나고 헤어지며 살아오셨다. 그 과정에서 겪은 사랑과 이별, 실패와 생존, 고통과 외로움, 다시 일어서야 했던 순간들을 글로 남겨오셨다.</p>
+        <p>그리고 그 삶의 곁에는 늘 음악이 있었다.</p>
+        <p>어떤 음악은 힘든 시절을 버티게 했고, 어떤 음악은 지나간 사람을 떠올리게 했으며, 어떤 음악은 사랑과 가족, 사업과 삶을 다시 생각하게 했다.</p>
+        <p>그래서 행동주의자님의 글에서 음악은 단순한 추천곡이나 배경음악이 아니다. 한 사람이 살아온 시간과 감정, 생각과 철학이 함께 남아 있는 기록에 가깝다.</p>
+        <p>「행동힙합」은 그렇게 오랜 시간 쌓여온 글과 음악을 오키가 모아 여섯 권으로 엮은 것이다.</p>
+        <p class="vols">1권 태도 · 2권 기억 · 3권 생존 · 4권 사랑 · 5권 힙합 · 6권 명반</p>
+        <p>한 사람이 무엇을 사랑했고, 무엇을 견뎠으며, 어떤 생각으로 살아왔는지.<br>그 흔적을 글로 읽고, 음악으로 들을 수 있다.</p>
+      </div></div>`;
   $('#playall').onclick = () => { const q = tracks.map(t => t.music.map((m, s) => ({ v: t.v, t: t.k, s })).filter((x) => !t.music[x.s].dead)).flat(); startQueue(q, 0, { type: 'artist', name: '배준익' }); };
   bindRows({ type: 'album', v: 0 }); bindCards();
 }
