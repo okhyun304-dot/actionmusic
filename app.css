@@ -564,3 +564,7 @@ body[data-albums=row] .alb{padding:10px}body[data-albums=row] .alb b{font-size:1
 }
 
 .ihero .fbtns{gap:14px}      /* 두 버튼이 붙어 보여서 띄움 */
+
+.lgbox{margin-top:16px;font-size:13px;font-family:ui-monospace,Menlo,Consolas,monospace}
+.lgrow{padding:8px 10px;border-bottom:1px solid var(--line);color:var(--dim);word-break:break-all}
+.lgrow b{color:var(--ink);margin-right:8px}

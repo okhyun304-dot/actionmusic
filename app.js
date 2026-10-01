@@ -24,7 +24,7 @@ const save = () => { for (const k of ['vol', 'muted', 'shuffle', 'repeat', 'like
 
 /* ══ 데이터 ══ */
 const _m = location.search.match(/albums=(\w+)/); if (_m) document.body.dataset.albums = _m[1];
-window.APPV = '1790815089';                                        // 이 코드의 판 번호 (앱생성.py 가 넣는다)
+window.APPV = '1790840369';                                        // 이 코드의 판 번호 (앱생성.py 가 넣는다)
 /* 폰이 옛 코드를 붙들고 있으면 음악이 끊기는 등 엉뚱한 증상이 난다. 새 판이 올라와 있으면 한 번 새로 받는다. */
 fetch('ver.txt', { cache: 'no-store' }).then(r => r.text()).then(v => {
   v = (v || '').trim();
@@ -75,6 +75,7 @@ function route() {
   if (nav === 'liked') return viewLiked();
   if (nav === 'artist') return viewArtist();
   if (nav === 'search') return viewSearch(p[1] || '', p[2] || 'all');
+  if (nav === 'log') return viewLog();
   if (nav === 'v') return p[1] ? viewVideo(p[1]) : viewVideos();
   if (nav === 'lib') return viewLibMobile();
   viewHome();
@@ -173,6 +174,22 @@ function mtop() {
   el.hidden = false;
 }
 let LASTREAD = load('lastread', null);                             // 마지막으로 연 글 — 다른 화면에 갔다가 돌아오게
+
+/* ══ 끊김 기록 ══ 무엇이 왜 끊겼는지 폰에서 바로 볼 수 있게 남긴다 (#/log) */
+const LOG = load('log', []);
+function logit(what, extra) {
+  LOG.push({ t: new Date().toTimeString().slice(0, 8), what, ...extra });
+  while (LOG.length > 60) LOG.shift();
+  try { store('log', LOG); } catch (e) {}
+}
+function viewLog() {
+  const rows = LOG.slice().reverse().map(x => `<div class="lgrow"><b>${x.t}</b> ${esc(x.what)}${x.vid ? ' · ' + x.vid : ''}${x.code != null ? ' · 오류 ' + x.code : ''}${x.net != null ? ' · net ' + x.net : ''}${x.at != null ? ' · ' + Math.round(x.at) + '초' : ''}${x.try ? ' · ' + x.try + '번째' : ''}</div>`).join('');
+  $('#view').innerHTML = `<div class="pad"><div class="h1">끊김 기록</div>
+    <p class="vintro">판 ${window.APPV} · 재생기 ${USE} · 기록 ${LOG.length}개. 위가 최근입니다.</p>
+    <div class="fbtns"><button class="btn" id="lgclr">기록 지우기</button></div>
+    <div class="lgbox">${rows || '<div class="empty">아직 기록이 없습니다.</div>'}</div></div>`;
+  $('#lgclr').onclick = () => { LOG.length = 0; store('log', LOG); viewLog(); };
+}
 
 /* ══ 행동영상 ══ 대장님 글로 만든 낭독 영상. 글과는 따로 두고, 글에서는 한 줄 링크로만 넘어간다. */
 function vidList() {
@@ -602,11 +619,14 @@ function mkAudio() {
     if (a !== AUD || USE !== 'mp3') return;
     const q = cur(); if (!q) return;
     const m = trk(q.v, q.t).music[q.s];
-    if (hasMp3(m.vid) && AUD_RETRY < 5) {                         // MP3 가 있는 곡은 유튜브로 넘기지 않고 듣던 자리에서 다시 붙는다
+    logit('MP3 끊김', { vid: m.vid, code: a.error && a.error.code, net: a.networkState, at: a.currentTime, try: AUD_RETRY + 1 });
+    if (hasMp3(m.vid)) {                                          // MP3 가 있는 곡은 유튜브로 넘기지 않는다 (유튜브가 더 잘 끊긴다)
       AUD_RETRY++; const at = a.currentTime || 0;
-      setTimeout(() => { a.src = mp3Url(m.vid) + '&r=' + AUD_RETRY; if (at) { a.addEventListener('loadedmetadata', () => { try { a.currentTime = at; } catch (e) {} }, { once: true }); } a.play().catch(() => {}); }, 400 * AUD_RETRY);
+      if (AUD_RETRY === 3) toast('연결이 불안정합니다. 다시 잇는 중…');
+      setTimeout(() => { a.src = mp3Url(m.vid) + '&r=' + AUD_RETRY; if (at) { a.addEventListener('loadedmetadata', () => { try { a.currentTime = at; } catch (e) {} }, { once: true }); } a.play().catch(() => {}); }, Math.min(400 * AUD_RETRY, 4000));
       return;
     }
+    logit('유튜브로 넘어감 (MP3 없음)', { vid: m.vid });
     USE = 'yt'; const vb = document.querySelector('.video'); if (vb) vb.style.display = '';
     if (ytReady) YTP.loadVideoById(m.vid);                        // 그래도 안 되면 유튜브로
   });
@@ -682,6 +702,7 @@ setInterval(() => {
   if (AUD.readyState >= 3) { STALL = 0; return; }
   if (++STALL >= 6) {                                              // 12초 동안 못 나오면
     STALL = 0; const at = AUD.currentTime || 0; const vid = AUD.dataset.vid; if (!vid) return;
+    logit('12초 멎음 → 다시 연결', { vid, at, net: AUD.networkState });
     dropNext();                                                    // 미리 받던 것부터 멈춰 회선을 비운다
     AUD.src = mp3Url(vid) + '&s=' + Date.now();
     AUD.addEventListener('loadedmetadata', () => { try { AUD.currentTime = at; } catch (e) {} }, { once: true });
