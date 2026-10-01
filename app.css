@@ -568,3 +568,7 @@ body[data-albums=row] .alb{padding:10px}body[data-albums=row] .alb b{font-size:1
 .lgbox{margin-top:16px;font-size:13px;font-family:ui-monospace,Menlo,Consolas,monospace}
 .lgrow{padding:8px 10px;border-bottom:1px solid var(--line);color:var(--dim);word-break:break-all}
 .lgrow b{color:var(--ink);margin-right:8px}
+
+.libfoot{margin-top:30px;padding-top:16px;border-top:1px solid var(--line);color:var(--faint);font-size:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.libfoot a{color:var(--dim);text-decoration:underline;text-underline-offset:3px}
+.libfoot button{margin-left:auto;background:#ffffff14;border-radius:14px;padding:6px 12px;color:var(--ink);font-size:12px}

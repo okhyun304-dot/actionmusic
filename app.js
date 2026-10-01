@@ -24,7 +24,7 @@ const save = () => { for (const k of ['vol', 'muted', 'shuffle', 'repeat', 'like
 
 /* ══ 데이터 ══ */
 const _m = location.search.match(/albums=(\w+)/); if (_m) document.body.dataset.albums = _m[1];
-window.APPV = '1790840369';                                        // 이 코드의 판 번호 (앱생성.py 가 넣는다)
+window.APPV = '1790841450';                                        // 이 코드의 판 번호 (앱생성.py 가 넣는다)
 /* 폰이 옛 코드를 붙들고 있으면 음악이 끊기는 등 엉뚱한 증상이 난다. 새 판이 올라와 있으면 한 번 새로 받는다. */
 fetch('ver.txt', { cache: 'no-store' }).then(r => r.text()).then(v => {
   v = (v || '').trim();
@@ -479,7 +479,10 @@ function viewLibMobile() {
     html += sec(esc(b.name), g, `장 ${g.length}개`);
   }
   html += sec('행동영상', vids);
+  html += `<div class="libfoot">판 ${window.APPV} · 재생기 ${USE}
+    <a href="#/log">끊김 기록</a><button id="libup">새로 받기</button></div>`;
   $('#view').innerHTML = `<div class="pad">${html}</div>`;
+  $('#libup').onclick = () => { try { localStorage.removeItem('q'); } catch (e) {} location.replace(location.pathname + '?v=' + Date.now() + '#/'); };
   bindCards();
 }
 
