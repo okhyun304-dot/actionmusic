@@ -24,7 +24,7 @@ const save = () => { for (const k of ['vol', 'muted', 'shuffle', 'repeat', 'like
 
 /* ══ 데이터 ══ */
 const _m = location.search.match(/albums=(\w+)/); if (_m) document.body.dataset.albums = _m[1];
-window.APPV = '1791199253';                                        // 이 코드의 판 번호 (앱생성.py 가 넣는다)
+window.APPV = '1791199698';                                        // 이 코드의 판 번호 (앱생성.py 가 넣는다)
 /* 폰이 옛 코드를 붙들고 있으면 음악이 끊기는 등 엉뚱한 증상이 난다. 새 판이 올라와 있으면 한 번 새로 받는다. */
 fetch('ver.txt', { cache: 'no-store' }).then(r => r.text()).then(v => {
   v = (v || '').trim();
@@ -713,14 +713,13 @@ function load_(a, go) {
       const old = AUD; old.pause(); old.removeAttribute('src'); old.preload = 'none'; old.load(); delete old.dataset.vid;
       AUD = NXT; NXT = old;
     } else if (AUD.dataset.vid !== vid) {
-      AUD.src = mp3Url(vid); AUD.dataset.vid = vid;
+      AUD.src = held(vid) || mp3Url(vid); AUD.dataset.vid = vid;  // 쥔 사본이 있으면 망을 안 탄다
     }
     AUD.preload = 'auto';                                          // 지금 트는 쪽은 앞서서 넉넉히 받아둔다
     AUD.volume = S.vol / 100; AUD.muted = !!S.muted;
     if (at) { try { AUD.currentTime = at; } catch (e) {} }
     if (vb) vb.style.display = 'none';                             // MP3 로 트는 동안엔 유튜브 창이 필요 없다
     if (go) AUD.play().catch(() => syncBar());
-    hold(vid);                                                     // 지금 곡을 통째로 받아 쥔다
     if (NXT.dataset.vid && NXT.dataset.vid !== vid) dropNext();     // 엉뚱한 곡을 미리 받고 있었으면 버린다
   } else {
     USE = 'yt'; AUD.pause(); AUD.removeAttribute('src'); delete AUD.dataset.vid;
@@ -739,11 +738,14 @@ function held(vid) { return HELD.get(vid) || null; }
 function hold(vid) {
   if (!vid || HELD.has(vid) || !hasMp3(vid)) return;
   HELD.set(vid, null);                                             // 두 번 받지 않도록 자리만 잡아둔다
-  // cache:'reload' — 예전에 받아둔 응답이 캐시에 남아 있으면 그게 길을 막는다. 새로 받아 캐시도 갈아끼운다
-  fetch(mp3Url(vid), { cache: 'reload' }).then(r => r.ok ? r.blob() : null).then(b => {
+  // 캐시에 있으면 그걸 쓴다(다시 들을 땐 망을 안 탄다). 옛 응답이 길을 막으면 그때만 새로 받는다
+  const get = o => fetch(mp3Url(vid), o).then(r => r.ok ? r.blob() : null);
+  get({}).catch(() => get({ cache: 'reload' })).then(b => {
     if (!b) { HELD.delete(vid); return; }
     HELD.set(vid, URL.createObjectURL(b));
-    for (const k of [...HELD.keys()].slice(0, -3)) {                // 셋만 들고 있는다
+    const 쓰는중 = [AUD.dataset.vid, NXT.dataset.vid];               // 지금 틀고 있는 사본은 절대 버리지 않는다
+    for (const k of [...HELD.keys()].slice(0, -2)) {                // 그 밖에는 둘만 들고 있는다
+      if (쓰는중.includes(k)) continue;
       const u = HELD.get(k); if (u) URL.revokeObjectURL(u);
       HELD.delete(k);
     }
@@ -751,18 +753,20 @@ function hold(vid) {
 }
 function buffered(a) { try { return a.buffered.length ? a.buffered.end(a.buffered.length - 1) - a.currentTime : 0; } catch (e) { return 0; } }
 function prepNext() {
-  /* 다음 곡 미리 받기. 곡 전체를 미리 받으면 지금 듣는 곡의 회선을 뺏겨 오히려 끊긴다
-     (43분짜리 교향곡이 다음일 때 특히). 그래서 끝나기 20초 전부터, 지금 곡이 넉넉히 받아졌을 때만 시작한다. */
+  /* 다음 곡 미리 받기. 한 벌만 받는다 — 사본을 받아 두었다가 그 사본으로 튼다.
+     곡 전체를 일찍 받으면 지금 듣는 곡의 회선을 뺏겨 오히려 끊긴다(43분짜리 교향곡이 다음일 때 특히).
+     그래서 끝나기 60초 전부터, 지금 곡이 넉넉히 받아졌을 때만 시작한다. */
   if (USE !== 'mp3' || !Q.list.length || AUD.paused) return;
   const d = P.getDuration(), c = P.getCurrentTime();
   const left = d > 0 ? d - c : 1e9;
-  if (left > 20) return;                                          // 끝나기 20초 전부터
+  if (left > 60) return;                                          // 끝나기 60초 전부터 (사본 받을 틈)
   if (buffered(AUD) + 3 < left) return;                           // 지금 곡의 남은 부분이 아직 안 받아졌으면 회선을 나눠 쓰지 않는다
   const nx = Q.list[(Q.i + 1) % Q.list.length]; if (!nx) return;
   const t = trk(nx.v, nx.t); const m = t && t.music[nx.s];
   if (!m || !hasMp3(m.vid) || NXT.dataset.vid === m.vid) return;
-  NXT.pause(); NXT.preload = 'auto'; NXT.src = mp3Url(m.vid); NXT.dataset.vid = m.vid; NXT.volume = S.vol / 100; NXT.load();
-  hold(m.vid);                                                    // 다음 곡도 쥐어 둔다
+  const u = held(m.vid);
+  if (!u) { hold(m.vid); return; }                                // 아직 안 받았으면 받아만 둔다 (한 벌만 받는다)
+  NXT.pause(); NXT.preload = 'auto'; NXT.src = u; NXT.dataset.vid = m.vid; NXT.volume = S.vol / 100; NXT.load();
 }
 function dropNext() { if (NXT.dataset.vid) { NXT.pause(); NXT.removeAttribute('src'); NXT.preload = 'none'; NXT.load(); delete NXT.dataset.vid; } }
 setInterval(prepNext, 2000);
