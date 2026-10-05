@@ -24,7 +24,7 @@ const save = () => { for (const k of ['vol', 'muted', 'shuffle', 'repeat', 'like
 
 /* ══ 데이터 ══ */
 const _m = location.search.match(/albums=(\w+)/); if (_m) document.body.dataset.albums = _m[1];
-window.APPV = '1791199698';                                        // 이 코드의 판 번호 (앱생성.py 가 넣는다)
+window.APPV = '1791199963';                                        // 이 코드의 판 번호 (앱생성.py 가 넣는다)
 /* 폰이 옛 코드를 붙들고 있으면 음악이 끊기는 등 엉뚱한 증상이 난다. 새 판이 올라와 있으면 한 번 새로 받는다. */
 fetch('ver.txt', { cache: 'no-store' }).then(r => r.text()).then(v => {
   v = (v || '').trim();
@@ -626,9 +626,10 @@ function renderList() {
 /* ══ 재생기 ══ 드롭박스에 MP3 가 있으면 그걸로 (광고 없음·영상이 내려가도 재생됨), 없으면 유튜브.
    재생기를 둘 두고 다음 곡을 미리 받아둔다 — 드롭박스는 주소를 두 번 넘겨줘서, 그때 가서 받으면 곡 사이가 끊긴다. */
 let USE = 'yt';                                                   // 지금 곡을 무엇으로 트는가
-let AUD_RETRY = 0;
+let AUD_RETRY = 0, AUD_RETRY_PLAIN = 0;
 function mkAudio() {
-  const a = new Audio(); a.preload = 'none'; a.crossOrigin = null;
+  const a = new Audio(); a.preload = 'none';
+  a.crossOrigin = 'anonymous';   // 이렇게 받아야 받아둔 것을 사본으로 다시 꺼낼 수 있다 (망을 또 타지 않는다)
   a.addEventListener('loadedmetadata', () => { if (a !== AUD || USE !== 'mp3') return; const q = cur(); if (!q) return; const m = trk(q.v, q.t).music[q.s]; if (m && !m.dur) m.dur = Math.round(a.duration); });
   a.addEventListener('ended', () => { if (a !== AUD || USE !== 'mp3') return; if (S.repeat === 2) { a.currentTime = 0; a.play().catch(() => {}); } else step(1); });
   for (const ev of ['play', 'pause']) a.addEventListener(ev, () => { if (a === AUD && USE === 'mp3') { syncBar(); markRows(); renderBody(); } });
@@ -641,6 +642,11 @@ function mkAudio() {
     if (hasMp3(m.vid)) {                                          // MP3 가 있는 곡은 유튜브로 넘기지 않는다 (유튜브가 더 잘 끊긴다)
       AUD_RETRY++;
       WANT = { vid: m.vid, at: LAST_T };
+      if (a.crossOrigin && a.error && a.error.code === 4 && !AUD_RETRY_PLAIN) {
+        AUD_RETRY_PLAIN = 1;                                       // 교차출처가 막힌 곳이면 예전 방식으로 물러선다
+        logit('예전 방식으로 물러섬', { vid: m.vid, at: LAST_T });
+        a.crossOrigin = null; resume(a, m.vid, LAST_T, 0); return;
+      }
       const u = held(m.vid);
       if (u) {                                                     // 손에 들고 있으면 통신 없이 바로 잇는다
         logit('쥐고 있던 곡으로 이음', { vid: m.vid, at: LAST_T });
@@ -770,6 +776,17 @@ function prepNext() {
 }
 function dropNext() { if (NXT.dataset.vid) { NXT.pause(); NXT.removeAttribute('src'); NXT.preload = 'none'; NXT.load(); delete NXT.dataset.vid; } }
 setInterval(prepNext, 2000);
+
+/* 지금 곡이 다 받아졌으면 그것을 사본으로 꺼내 쥔다. 재생기가 이미 받아둔 것이라 망을 다시 타지 않는다.
+   손으로 골라 누른 곡도 이렇게 해야 사본이 생긴다 — 넘어가며 듣는 사람만 지켜서는 안 된다. */
+setInterval(() => {
+  if (USE !== 'mp3') return;
+  const vid = AUD.dataset.vid; if (!vid || HELD.has(vid)) return;
+  if ((AUD.src || '').startsWith('blob:')) return;                 // 이미 사본으로 틀고 있으면 할 일이 없다
+  if (!AUD.duration || !AUD.buffered.length) return;
+  if (AUD.buffered.end(AUD.buffered.length - 1) < AUD.duration - 2) return;   // 끝까지 받아졌을 때만
+  hold(vid);
+}, 3000);
 
 /* 재생이 멎으면(회선이 흔들리면) 같은 자리에서 다시 붙여 본다 */
 let STALL = 0;
