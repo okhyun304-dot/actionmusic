@@ -24,7 +24,7 @@ const save = () => { for (const k of ['vol', 'muted', 'shuffle', 'repeat', 'like
 
 /* ══ 데이터 ══ */
 const _m = location.search.match(/albums=(\w+)/); if (_m) document.body.dataset.albums = _m[1];
-window.APPV = '1791199099';                                        // 이 코드의 판 번호 (앱생성.py 가 넣는다)
+window.APPV = '1791199253';                                        // 이 코드의 판 번호 (앱생성.py 가 넣는다)
 /* 폰이 옛 코드를 붙들고 있으면 음악이 끊기는 등 엉뚱한 증상이 난다. 새 판이 올라와 있으면 한 번 새로 받는다. */
 fetch('ver.txt', { cache: 'no-store' }).then(r => r.text()).then(v => {
   v = (v || '').trim();
@@ -739,7 +739,8 @@ function held(vid) { return HELD.get(vid) || null; }
 function hold(vid) {
   if (!vid || HELD.has(vid) || !hasMp3(vid)) return;
   HELD.set(vid, null);                                             // 두 번 받지 않도록 자리만 잡아둔다
-  fetch(mp3Url(vid)).then(r => r.ok ? r.blob() : null).then(b => {
+  // cache:'reload' — 예전에 받아둔 응답이 캐시에 남아 있으면 그게 길을 막는다. 새로 받아 캐시도 갈아끼운다
+  fetch(mp3Url(vid), { cache: 'reload' }).then(r => r.ok ? r.blob() : null).then(b => {
     if (!b) { HELD.delete(vid); return; }
     HELD.set(vid, URL.createObjectURL(b));
     for (const k of [...HELD.keys()].slice(0, -3)) {                // 셋만 들고 있는다
