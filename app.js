@@ -24,7 +24,7 @@ const save = () => { for (const k of ['vol', 'muted', 'shuffle', 'repeat', 'like
 
 /* ══ 데이터 ══ */
 const _m = location.search.match(/albums=(\w+)/); if (_m) document.body.dataset.albums = _m[1];
-window.APPV = '1791213886';                                        // 이 코드의 판 번호 (앱생성.py 가 넣는다)
+window.APPV = '1791215981';                                        // 이 코드의 판 번호 (앱생성.py 가 넣는다)
 /* 폰이 옛 코드를 붙들고 있으면 음악이 끊기는 등 엉뚱한 증상이 난다. 새 판이 올라와 있으면 한 번 새로 받는다. */
 fetch('ver.txt', { cache: 'no-store' }).then(r => r.text()).then(v => {
   v = (v || '').trim();
@@ -811,6 +811,7 @@ function prepNext() {
 }
 function dropNext() { if (NXT.dataset.vid) { NXT.pause(); NXT.removeAttribute('src'); NXT.preload = 'none'; NXT.load(); delete NXT.dataset.vid; } }
 setInterval(prepNext, 2000);
+setInterval(() => { if (!document.hidden || playing()) mediaState(); }, 2000);   // 잠금화면 진행 바가 따라오게
 
 /* 지금 곡이 다 받아졌으면 그것을 사본으로 꺼내 쥔다. 재생기가 이미 받아둔 것이라 망을 다시 타지 않는다.
    손으로 골라 누른 곡도 이렇게 해야 사본이 생긴다 — 넘어가며 듣는 사람만 지켜서는 안 된다. */
@@ -845,15 +846,14 @@ setInterval(() => {
 /* ══ 잠금화면·알림창 조작 ══ 폰 잠금화면에 앨범 사진·곡명과 이전/재생/다음 버튼을 띄운다 (이어폰 버튼도 여기로 들어온다) */
 function mediaSession(t, m, b) {
   if (!('mediaSession' in navigator)) return;
-  const img = n => new URL(thumb(m.vid), location.href).href;      // 잠금화면 그림도 앱 안의 것으로
+  const full = u => new URL(u, location.href).href;
   navigator.mediaSession.metadata = new MediaMetadata({
     title: m.title || '곡',
     artist: m.artist || `${pad2(t.k + 1)} ${t.title}`,
     album: `${b.name} · ${pad2(t.k + 1)} ${t.title}`,
-    artwork: [
-      { src: img('mqdefault.jpg'), sizes: '320x180', type: 'image/jpeg' },
-      { src: img('hqdefault.jpg'), sizes: '480x360', type: 'image/jpeg' },
-      { src: 'icon-512.png', sizes: '512x512', type: 'image/png' },
+    artwork: [                                                     // 정사각이 먼저. 앱 아이콘을 넣으면 그게 이겨서 표지가 뜬다
+      { src: full(`img/ytq/${m.vid}.jpg`), sizes: '512x512', type: 'image/jpeg' },
+      { src: full(thumb(m.vid)), sizes: '320x240', type: 'image/jpeg' },
     ],
   });
   for (const [k, f] of [['play', () => P.playVideo()], ['pause', () => P.pauseVideo()],
