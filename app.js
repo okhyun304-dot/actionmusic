@@ -24,7 +24,7 @@ const save = () => { for (const k of ['vol', 'muted', 'shuffle', 'repeat', 'like
 
 /* ══ 데이터 ══ */
 const _m = location.search.match(/albums=(\w+)/); if (_m) document.body.dataset.albums = _m[1];
-window.APPV = '1791209883';                                        // 이 코드의 판 번호 (앱생성.py 가 넣는다)
+window.APPV = '1791211876';                                        // 이 코드의 판 번호 (앱생성.py 가 넣는다)
 /* 폰이 옛 코드를 붙들고 있으면 음악이 끊기는 등 엉뚱한 증상이 난다. 새 판이 올라와 있으면 한 번 새로 받는다. */
 fetch('ver.txt', { cache: 'no-store' }).then(r => r.text()).then(v => {
   v = (v || '').trim();
@@ -755,6 +755,12 @@ function load_(a, go) {
    그래서 곡을 통째로 받아 손에 들고 있다가, 끊기면 통신 없이 그 자리에서 다시 튼다. */
 const HELD = new Map();                                            // vid → 손에 든 곡 주소
 function held(vid) { return HELD.get(vid) || null; }
+function nextVid() {                                               // 다음에 틀 곡
+  if (!Q.list.length || Q.i < 0) return null;
+  const nx = Q.list[(Q.i + 1) % Q.list.length]; if (!nx) return null;
+  const t = trk(nx.v, nx.t); const m = t && t.music[nx.s];
+  return m && hasMp3(m.vid) ? m.vid : null;
+}
 function hold(vid) {
   if (!vid || HELD.has(vid) || !hasMp3(vid)) return;
   HELD.set(vid, null);                                             // 두 번 받지 않도록 자리만 잡아둔다
@@ -763,6 +769,7 @@ function hold(vid) {
   get({}).catch(() => get({ cache: 'reload' })).then(b => {
     if (!b) { HELD.delete(vid); return; }
     HELD.set(vid, URL.createObjectURL(b));
+    if (vid === AUD.dataset.vid) { const n = nextVid(); if (n) hold(n); }   // 지금 곡을 쥐었으면 곧바로 다음 곡도
     const 쓰는중 = [AUD.dataset.vid, NXT.dataset.vid];               // 지금 틀고 있는 사본은 절대 버리지 않는다
     for (const k of [...HELD.keys()].slice(0, -2)) {                // 그 밖에는 둘만 들고 있는다
       if (쓰는중.includes(k)) continue;
@@ -779,7 +786,7 @@ function prepNext() {
   if (USE !== 'mp3' || !Q.list.length || AUD.paused) return;
   const d = P.getDuration(), c = P.getCurrentTime();
   const left = d > 0 ? d - c : 1e9;
-  if (left > 60) return;                                          // 끝나기 60초 전부터 (사본 받을 틈)
+  if (left > 120) return;                                         // 끝나기 2분 전부터 — 화면이 꺼진 뒤엔 준비를 못 한다
   if (buffered(AUD) + 3 < left) return;                           // 지금 곡의 남은 부분이 아직 안 받아졌으면 회선을 나눠 쓰지 않는다
   const nx = Q.list[(Q.i + 1) % Q.list.length]; if (!nx) return;
   const t = trk(nx.v, nx.t); const m = t && t.music[nx.s];
@@ -794,12 +801,17 @@ setInterval(prepNext, 2000);
 /* 지금 곡이 다 받아졌으면 그것을 사본으로 꺼내 쥔다. 재생기가 이미 받아둔 것이라 망을 다시 타지 않는다.
    손으로 골라 누른 곡도 이렇게 해야 사본이 생긴다 — 넘어가며 듣는 사람만 지켜서는 안 된다. */
 setInterval(() => {
-  if (USE !== 'mp3') return;
-  const vid = AUD.dataset.vid; if (!vid || HELD.has(vid)) return;
-  if ((AUD.src || '').startsWith('blob:')) return;                 // 이미 사본으로 틀고 있으면 할 일이 없다
-  if (!AUD.duration || !AUD.buffered.length) return;
-  if (AUD.buffered.end(AUD.buffered.length - 1) < AUD.duration - 2) return;   // 끝까지 받아졌을 때만
-  hold(vid);
+  if (USE !== 'mp3' || AUD.paused) return;
+  const vid = AUD.dataset.vid; if (!vid) return;
+  const n = nextVid();
+  if ((AUD.src || '').startsWith('blob:') || HELD.get(vid)) {       // 지금 곡은 이미 손에 있다
+    if (n && !HELD.has(n)) hold(n);                                // → 다음 곡을 쥔다
+    return;
+  }
+  if (HELD.has(vid)) return;                                       // 받는 중
+  const 다받음 = AUD.duration && AUD.buffered.length && AUD.buffered.end(AUD.buffered.length - 1) >= AUD.duration - 2;
+  if (다받음) { hold(vid); return; }                                // 재생기가 다 받아뒀으면 공짜로 꺼낸다
+  if (AUD.currentTime > 60 && n && !HELD.has(n)) hold(n);          // 긴 곡이라 오래 걸리면 다음 곡만이라도 먼저 쥔다
 }, 3000);
 
 /* 재생이 멎으면(회선이 흔들리면) 같은 자리에서 다시 붙여 본다 */
