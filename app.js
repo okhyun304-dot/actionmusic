@@ -24,7 +24,7 @@ const save = () => { for (const k of ['vol', 'muted', 'shuffle', 'repeat', 'like
 
 /* ══ 데이터 ══ */
 const _m = location.search.match(/albums=(\w+)/); if (_m) document.body.dataset.albums = _m[1];
-window.APPV = '1791217090';                                        // 이 코드의 판 번호 (앱생성.py 가 넣는다)
+window.APPV = '1791219315';                                        // 이 코드의 판 번호 (앱생성.py 가 넣는다)
 /* 폰이 옛 코드를 붙들고 있으면 음악이 끊기는 등 엉뚱한 증상이 난다. 새 판이 올라와 있으면 한 번 새로 받는다. */
 fetch('ver.txt', { cache: 'no-store' }).then(r => r.text()).then(v => {
   v = (v || '').trim();
@@ -187,7 +187,7 @@ function logText() {                                              // 기록을 �
   const net = (navigator.connection && navigator.connection.effectiveType) || '?';
   const how = matchMedia('(display-mode: standalone)').matches ? '설치한 앱'
             : document.referrer.startsWith('android-app://') ? '앱(껍데기)' : '크롬 탭';
-  const head = `행동힙합 끊김기록 · 판 ${window.APPV} · ${how} · 잠금화면에 알린 위치 ${PS} · 재생기 ${USE} · 음원 ${host} · 망 ${net} · ${LOG.length}개`;
+  const head = `행동힙합 끊김기록 · 판 ${window.APPV} · ${how} · 재생기 ${USE} · 음원 ${host} · 망 ${net} · ${LOG.length}개`;
   return [head, ...LOG.slice().reverse().map(x => [x.t, x.what, x.vid, x.code != null ? '오류' + x.code : '', x.net != null ? 'net' + x.net : '', x.at != null ? Math.round(x.at) + '초' : '', x.try ? x.try + '번째' : '', x.buf != null ? '버퍼' + x.buf + '초' : '', x.hid ? '화면꺼짐' : '', x.rs != null ? '준비' + x.rs : '', x.from || '', x.why || ''].filter(Boolean).join(' · '))].join(String.fromCharCode(10));
 }
 
@@ -763,7 +763,7 @@ function load_(a, go) {
    이미 받아둔 209초를 쥐고도 재생기를 통째로 내려버린다(PIPELINE_ERROR_READ).
    그래서 곡을 통째로 받아 손에 들고 있다가, 끊기면 통신 없이 그 자리에서 다시 튼다. */
 const HELD = new Map();                                            // vid → 손에 든 곡 주소
-function held(vid) { return HELD.get(vid) || null; }
+function held(vid) { const u = HELD.get(vid); return u && u.indexOf('blob:') === 0 ? u : null; }
 function nextVid() {                                               // 다음에 틀 곡
   if (!Q.list.length || Q.i < 0) return null;
   const nx = Q.list[(Q.i + 1) % Q.list.length]; if (!nx) return null;
@@ -782,12 +782,13 @@ function hold(vid) {
     return r.blob();
   });
   get({}).catch(() => get({ cache: 'reload' })).then(b => {
-    if (b === 'too big') { HELD.delete(vid); logit('너무 커서 안 쥠', { vid: vid }); return; }
+    if (b === 'too big') { HELD.set(vid, '큼'); logit('너무 커서 안 쥠', { vid: vid }); return; }   // 기억해 둔다 — 다시 묻지 않는다
     if (!b) { HELD.delete(vid); return; }
     HELD.set(vid, URL.createObjectURL(b));
     if (vid === AUD.dataset.vid) { const n = nextVid(); if (n) hold(n); }   // 지금 곡을 쥐었으면 곧바로 다음 곡도
     const 쓰는중 = [AUD.dataset.vid, NXT.dataset.vid];               // 지금 틀고 있는 사본은 절대 버리지 않는다
-    for (const k of [...HELD.keys()].slice(0, -2)) {                // 그 밖에는 둘만 들고 있는다
+    const 사본 = [...HELD.keys()].filter(k => (HELD.get(k) || '').indexOf('blob:') === 0);
+    for (const k of 사본.slice(0, -2)) {                             // 그 밖에는 둘만 들고 있는다
       if (쓰는중.includes(k)) continue;
       const u = HELD.get(k); if (u) URL.revokeObjectURL(u);
       HELD.delete(k);
@@ -813,7 +814,7 @@ function prepNext() {
 }
 function dropNext() { if (NXT.dataset.vid) { NXT.pause(); NXT.removeAttribute('src'); NXT.preload = 'none'; NXT.load(); delete NXT.dataset.vid; } }
 setInterval(prepNext, 2000);
-setInterval(() => { if (!document.hidden || playing()) mediaState(); }, 2000);   // 잠금화면 진행 바가 따라오게
+setInterval(() => { if (!document.hidden || playing()) mediaState(); }, 2000);   // 잠금화면 재생/멈춤 표시를 맞춘다
 
 /* 지금 곡이 다 받아졌으면 그것을 사본으로 꺼내 쥔다. 재생기가 이미 받아둔 것이라 망을 다시 타지 않는다.
    손으로 골라 누른 곡도 이렇게 해야 사본이 생긴다 — 넘어가며 듣는 사람만 지켜서는 안 된다. */
@@ -868,15 +869,11 @@ function mediaSession(t, m, b) {
     try { navigator.mediaSession.setActionHandler(k, f); } catch (e) {}
   }
 }
-let PS = '아직';
 function mediaState() {
   if (!('mediaSession' in navigator)) return;
   navigator.mediaSession.playbackState = playing() ? 'playing' : (Q.i >= 0 ? 'paused' : 'none');
-  const d = P.getDuration(), c = P.getCurrentTime();                     // 잠금화면 진행바
-  if (d > 0 && isFinite(d) && navigator.mediaSession.setPositionState) {
-    try { navigator.mediaSession.setPositionState({ duration: d, position: Math.min(c, d), playbackRate: 1 }); PS = `${Math.round(Math.min(c, d))}/${Math.round(d)}초`; }
-    catch (e) { PS = '거부됨 ' + (e && e.message || '').slice(0, 40); }
-  }
+  /* 진행 바는 보내지 않는다. 맞는 값(76/253초)을 2초마다 보내도 삼성 쪽이 무시하고 끝에 박힌 바를
+     그린다. 틀린 위치를 보여주느니 안 띄우는 편이 낫다. 곡 그림·제목·버튼은 그대로 나온다. */
 }
 setInterval(mediaState, 1000);
 
