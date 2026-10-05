@@ -24,7 +24,7 @@ const save = () => { for (const k of ['vol', 'muted', 'shuffle', 'repeat', 'like
 
 /* ══ 데이터 ══ */
 const _m = location.search.match(/albums=(\w+)/); if (_m) document.body.dataset.albums = _m[1];
-window.APPV = '1791219556';                                        // 이 코드의 판 번호 (앱생성.py 가 넣는다)
+window.APPV = '1791219914';                                        // 이 코드의 판 번호 (앱생성.py 가 넣는다)
 /* 폰이 옛 코드를 붙들고 있으면 음악이 끊기는 등 엉뚱한 증상이 난다. 새 판이 올라와 있으면 한 번 새로 받는다. */
 fetch('ver.txt', { cache: 'no-store' }).then(r => r.text()).then(v => {
   v = (v || '').trim();
@@ -740,7 +740,7 @@ function load_(a, go) {
     if (ytReady) YTP.stopVideo();
     if (NXT.dataset.vid === vid && NXT.readyState >= 2) {          // 미리 받아둔 게 있으면 그걸로 바꿔 끼운다 (끊김 없음)
       const old = AUD; BYUS = Date.now(); old.pause(); old.removeAttribute('src'); old.preload = 'none'; old.load(); delete old.dataset.vid;
-      AUD = NXT; NXT = old; clearSpare();
+      AUD = NXT; NXT = old;
     } else if (AUD.dataset.vid !== vid) {
       AUD.src = held(vid) || mp3Url(vid); AUD.dataset.vid = vid;  // 쥔 사본이 있으면 망을 안 탄다
     }
@@ -813,8 +813,6 @@ function prepNext() {
   NXT.pause(); NXT.preload = 'auto'; NXT.src = u; NXT.dataset.vid = m.vid; NXT.volume = S.vol / 100; NXT.load();
 }
 function dropNext() { if (NXT.dataset.vid) { NXT.pause(); NXT.removeAttribute('src'); NXT.preload = 'none'; NXT.load(); delete NXT.dataset.vid; } }
-/* 곡이 바뀐 뒤 남은 재생기는 '곡 끝' 자리에 멈춰 있다. 비워 두지 않으면 잠금화면이 그 자리를 보여줄 수 있다. */
-function clearSpare() { try { NXT.pause(); NXT.currentTime = 0; } catch (e) {} }
 setInterval(prepNext, 2000);
 setInterval(() => { if (!document.hidden || playing()) mediaState(); }, 2000);   // 잠금화면 재생/멈춤 표시를 맞춘다
 
@@ -874,14 +872,9 @@ function mediaSession(t, m, b) {
 function mediaState() {
   if (!('mediaSession' in navigator)) return;
   navigator.mediaSession.playbackState = playing() ? 'playing' : (Q.i >= 0 ? 'paused' : 'none');
-  /* 진행 바. 앱은 맞는 값을 보내는데(76/253초) 화면엔 251초짜리 끝으로 떴다 — 다른 곡의 길이다.
-     재생기를 둘 두는 탓에 끝난 쪽이 물려 나갔을 수 있어, 지금 트는 재생기에서 바로 읽어 보낸다. */
-  const a = USE === 'mp3' ? AUD : null;
-  const d = a ? (isFinite(a.duration) ? a.duration : 0) : P.getDuration();
-  const c = a ? (a.currentTime || 0) : P.getCurrentTime();
-  if (d > 1 && c >= 0 && c <= d + 1 && navigator.mediaSession.setPositionState) {
-    try { navigator.mediaSession.setPositionState({ duration: d, position: Math.min(c, d), playbackRate: 1 }); } catch (e) {}
-  }
+  /* 진행 바는 보내지 않는다. 맞는 값(76/253초)을 2초마다 보내도, 첫 곡부터 끝에 박힌 바가 떴다.
+     삼성 쪽이 우리 값을 쓰지 않는다. 틀린 위치를 보여주느니 안 보내는 편이 낫다.
+     곡 그림·제목·이전/재생/다음 버튼은 그대로 나온다. */
 }
 setInterval(mediaState, 1000);
 
