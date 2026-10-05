@@ -24,7 +24,7 @@ const save = () => { for (const k of ['vol', 'muted', 'shuffle', 'repeat', 'like
 
 /* ══ 데이터 ══ */
 const _m = location.search.match(/albums=(\w+)/); if (_m) document.body.dataset.albums = _m[1];
-window.APPV = '1791212207';                                        // 이 코드의 판 번호 (앱생성.py 가 넣는다)
+window.APPV = '1791213886';                                        // 이 코드의 판 번호 (앱생성.py 가 넣는다)
 /* 폰이 옛 코드를 붙들고 있으면 음악이 끊기는 등 엉뚱한 증상이 난다. 새 판이 올라와 있으면 한 번 새로 받는다. */
 fetch('ver.txt', { cache: 'no-store' }).then(r => r.text()).then(v => {
   v = (v || '').trim();
@@ -243,7 +243,7 @@ function viewVideo(key) {
     <h1><i>${x.no}</i>${esc(t.title)}</h1>
     <div class="vidbox"><video id="tv" controls playsinline preload="metadata" poster="${t.thumb && !t.thumb.startsWith('http') ? t.thumb : ''}" src="${u}"></video></div>
     <div class="vacts"><span class="vdate">${t.date || ''}</span><a class="vmore" href="#/b/${x.vol}/${x.no}">글만 따로 보기 ›</a></div>
-    ${t.music.length ? `<div class="songs">${t.music.map((m, si) => `<div class="songrow${m.dead ? ' dead' : ''}${c && c.v === v && c.t === k && c.s === si ? ' on' : ''}" data-s="${si}"><img src="https://i.ytimg.com/vi/${m.vid}/mqdefault.jpg" alt=""><div class="st"><b>${songHtml(m)}</b><small>${m.dead ? '유튜브에서 내려간 영상 · 교체 예정' : (m.dur ? fmt(m.dur) : '')}</small></div>${m.lyr ? `<button class="lyb" data-vid="${m.vid}" title="가사">가사</button>` : ''}<span class="pb">▶</span></div><div class="lyrics" id="ly-${m.vid}" hidden></div>`).join('')}</div>` : ''}
+    ${t.music.length ? `<div class="songs">${t.music.map((m, si) => `<div class="songrow${m.dead ? ' dead' : ''}${c && c.v === v && c.t === k && c.s === si ? ' on' : ''}" data-s="${si}">${thumbTag(m.vid)}<div class="st"><b>${songHtml(m)}</b><small>${m.dead ? '유튜브에서 내려간 영상 · 교체 예정' : (m.dur ? fmt(m.dur) : '')}</small></div>${m.lyr ? `<button class="lyb" data-vid="${m.vid}" title="가사">가사</button>` : ''}<span class="pb">▶</span></div><div class="lyrics" id="ly-${m.vid}" hidden></div>`).join('')}</div>` : ''}
     <div class="vbodyh">이 영상의 글</div>
     <div class="body">${t.html}</div>
   </div>`;
@@ -474,7 +474,7 @@ function bindSearchBox(q) {
 }
 
 const hitTrack = (t, hl) => `<div class="hit" data-v="${t.v}" data-k="${t.k}"><img src="${t.thumb}" alt=""><span style="min-width:0"><b>${hl(t.title)}</b><small>꼭지 · ${book(t.v).vol}권 ${pad2(t.k + 1)}${t.music[0] ? ' · ♪ ' + hl(songTxt(t.music[0])) : ''}</small></span><button class="go tile-go" data-play="${t.v},${t.k}" style="margin-left:auto;background:none;color:#fff;font-size:16px">▶</button></div>`;
-const hitSong = (t, m, hl) => `<div class="hit" data-v="${t.v}" data-k="${t.k}"><img src="https://i.ytimg.com/vi/${m.vid}/mqdefault.jpg" alt=""><span style="min-width:0"><b>${hl(songTxt(m))}</b><small>꼭지 · ${esc(t.title)}</small></span></div>`;
+const hitSong = (t, m, hl) => `<div class="hit" data-v="${t.v}" data-k="${t.k}">${thumbTag(m.vid)}<span style="min-width:0"><b>${hl(songTxt(m))}</b><small>꼭지 · ${esc(t.title)}</small></span></div>`;
 function shade(hex, i) { const n = parseInt(hex.slice(1), 16); const f = 0.75 + (i % 4) * 0.12; const c = x => Math.min(255, Math.round(x * f)); return `rgb(${c(n >> 16)},${c(n >> 8 & 255)},${c(n & 255)})`; }
 
 /* ══ 폰 라이브러리 ══ */
@@ -517,7 +517,7 @@ function viewTrack(v, k) {
     <div class="acts"><button class="playbig" data-act="play">${c && c.v === v && c.t === k && playing() ? '❚❚' : '▶'}</button><button class="ic${S.shuffle ? ' on' : ''}" data-act="shuffle" title="섞어 듣기">⇄</button><button class="ic like${liked(v, k) ? ' on' : ''}" data-act="like">${liked(v, k) ? '♥' : '♡'}</button><button class="ic" data-act="fs" title="전체화면">⛶</button><button class="ic" data-act="more" title="더보기">⋯</button><span style="margin-left:auto;font-size:12px;color:var(--dim)">${t.date || ''}</span></div>
     ${vidUrl(b.vol, k) ? `<a class="vlink" href="#/v/${b.vol}-${pad2(k + 1)}">▷ 이 글의 낭독 영상 보기</a>` : ''}
     ${t.thumb && !t.thumb.startsWith('http') ? `<img class="hero" src="${t.thumb}" alt="">` : ''}
-    ${t.music.length ? `<div class="songs">${t.music.map((m, s) => `<div class="songrow${m.dead ? ' dead' : ''}${c && c.v === v && c.t === k && c.s === s ? ' on' : ''}" data-s="${s}"><img src="https://i.ytimg.com/vi/${m.vid}/mqdefault.jpg" alt=""><div class="st"><b>${songHtml(m)}</b><small>${m.dead ? '유튜브에서 내려간 영상 · 교체 예정' : (m.dur ? fmt(m.dur) : '')}</small></div>${m.lyr ? `<button class="lyb" data-vid="${m.vid}" title="가사">가사</button>` : ''}<span class="pb">${c && c.v === v && c.t === k && c.s === s && playing() ? '❚❚' : '▶'}</span></div><div class="lyrics" id="ly-${m.vid}" hidden></div>`).join('')}</div>` : ''}
+    ${t.music.length ? `<div class="songs">${t.music.map((m, s) => `<div class="songrow${m.dead ? ' dead' : ''}${c && c.v === v && c.t === k && c.s === s ? ' on' : ''}" data-s="${s}">${thumbTag(m.vid)}<div class="st"><b>${songHtml(m)}</b><small>${m.dead ? '유튜브에서 내려간 영상 · 교체 예정' : (m.dur ? fmt(m.dur) : '')}</small></div>${m.lyr ? `<button class="lyb" data-vid="${m.vid}" title="가사">가사</button>` : ''}<span class="pb">${c && c.v === v && c.t === k && c.s === s && playing() ? '❚❚' : '▶'}</span></div><div class="lyrics" id="ly-${m.vid}" hidden></div>`).join('')}</div>` : ''}
     <div class="body">${t.html}</div>
     <div class="pn">${prev ? `<a href="#/b/${b.vol}/${pad2(k)}">← ${pad2(k)} ${esc(prev.title)}</a>` : '<span></span>'}${next ? `<a href="#/b/${b.vol}/${pad2(k + 2)}">${pad2(k + 2)} ${esc(next.title)} →</a>` : '<span></span>'}</div>
   </div>`;
@@ -705,6 +705,13 @@ function resume(a, vid, at, n) {
 setInterval(() => { if (USE === 'mp3' && !AUD.paused && AUD.currentTime > 0) LAST_T = AUD.currentTime; }, 500);
 let AUD = mkAudio(), NXT = mkAudio();                             // AUD = 지금 나오는 것, NXT = 다음 곡 미리 받는 것
 document.addEventListener('DOMContentLoaded', () => { const vb = document.querySelector('.video'); if (vb) vb.style.display = 'none'; });
+const thumb = vid => `img/yt/${vid}.jpg`;
+function setThumb(el, vid) {
+  if (!el) return;
+  el.onerror = () => { el.onerror = null; el.src = `https://i.ytimg.com/vi/${vid}/mqdefault.jpg`; };
+  el.src = thumb(vid);
+}                          // 곡 그림은 앱 안에 둔다 (유튜브 서버가 막힌 폰이 있다)
+const thumbTag = (vid, cls) => `<img src="${thumb(vid)}" ${cls ? `class="${cls}" ` : ''}onerror="this.onerror=null;this.src='https://i.ytimg.com/vi/${vid}/mqdefault.jpg'" alt="">`;
 const mp3Url = vid => (DATA && DATA.mp3base) ? DATA.mp3base + '/' + vid + '.mp3' : null;
 const hasMp3 = vid => !!(DATA && DATA.mp3base && DATA.mp3 && DATA.mp3[vid]);
 const vidUrl = (vol, k) => { const n = `${vol}-${pad2(k + 1)}`;
@@ -838,7 +845,7 @@ setInterval(() => {
 /* ══ 잠금화면·알림창 조작 ══ 폰 잠금화면에 앨범 사진·곡명과 이전/재생/다음 버튼을 띄운다 (이어폰 버튼도 여기로 들어온다) */
 function mediaSession(t, m, b) {
   if (!('mediaSession' in navigator)) return;
-  const img = n => `https://i.ytimg.com/vi/${m.vid}/${n}`;
+  const img = n => new URL(thumb(m.vid), location.href).href;      // 잠금화면 그림도 앱 안의 것으로
   navigator.mediaSession.metadata = new MediaMetadata({
     title: m.title || '곡',
     artist: m.artist || `${pad2(t.k + 1)} ${t.title}`,
@@ -931,7 +938,7 @@ function playCur(seek) {
   const t = trk(q.v, q.t), m = t.music[q.s], b = book(q.v);
   if (Q.ctx && (!LIST || !sameCtx(LIST)) && Q.ctx.type !== 'artist') { LIST = { type: Q.ctx.type, v: Q.ctx.v, c: Q.ctx.c, id: Q.ctx.id }; renderList(); }
   $('#bar').classList.remove('idle');
-  $('#now-img').src = `https://i.ytimg.com/vi/${m.vid}/mqdefault.jpg`;
+  setThumb($('#now-img'), m.vid);
   { const el = $('#now-song'); el.dataset.base = songTxt(m) || '곡'; el.textContent = el.dataset.base; } $('#now-sub').textContent = `${pad2(q.t + 1)} ${t.title} · ${b.vol}권`;
   const run = () => { seek ? P.loadVideoById({ videoId: m.vid, startSeconds: seek }) : P.loadVideoById(m.vid); };
   if (pReady()) run(); else pendingPlay = run;
@@ -976,7 +983,7 @@ function restoreQueue() {
   const q = load('q', null); if (!q || !q.list?.length) return;
   Q.list = q.list; Q.i = q.i; Q.ctx = q.ctx; Q.orig = q.orig || q.list.slice();
   const t = curTrack(), m = t && t.music[Q.list[Q.i].s]; if (!m) return;
-  $('#bar').classList.remove('idle'); $('#now-img').src = `https://i.ytimg.com/vi/${m.vid}/mqdefault.jpg`; $('#now-song').textContent = songTxt(m); $('#now-sub').textContent = `${pad2(Q.i >= 0 ? Q.list[Q.i].t + 1 : 0)} ${t.title} · ${book(t.v).vol}권`;
+  $('#bar').classList.remove('idle'); setThumb($('#now-img'), m.vid); $('#now-song').textContent = songTxt(m); $('#now-sub').textContent = `${pad2(Q.i >= 0 ? Q.list[Q.i].t + 1 : 0)} ${t.title} · ${book(t.v).vol}권`;
   if (!pendingPlay) pendingPlay = () => { P.cueVideoById({ videoId: m.vid, startSeconds: q.pos || 0 }); };   // QR 자동재생이 먼저면 그걸 우선
   mediaSession(t, m, book(t.v));                                    // 앱을 다시 열었을 때도 잠금화면에 곡이 뜨게
   syncBar();
