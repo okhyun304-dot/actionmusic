@@ -24,7 +24,7 @@ const save = () => { for (const k of ['vol', 'muted', 'shuffle', 'repeat', 'like
 
 /* ══ 데이터 ══ */
 const _m = location.search.match(/albums=(\w+)/); if (_m) document.body.dataset.albums = _m[1];
-window.APPV = '1791211876';                                        // 이 코드의 판 번호 (앱생성.py 가 넣는다)
+window.APPV = '1791212207';                                        // 이 코드의 판 번호 (앱생성.py 가 넣는다)
 /* 폰이 옛 코드를 붙들고 있으면 음악이 끊기는 등 엉뚱한 증상이 난다. 새 판이 올라와 있으면 한 번 새로 받는다. */
 fetch('ver.txt', { cache: 'no-store' }).then(r => r.text()).then(v => {
   v = (v || '').trim();
@@ -761,12 +761,19 @@ function nextVid() {                                               // 다음에 
   const t = trk(nx.v, nx.t); const m = t && t.music[nx.s];
   return m && hasMp3(m.vid) ? m.vid : null;
 }
+const 쥘수있는크기 = 12 * 1024 * 1024;                              // 12MB(약 12분)까지만 램에 쥔다
 function hold(vid) {
   if (!vid || HELD.has(vid) || !hasMp3(vid)) return;
   HELD.set(vid, null);                                             // 두 번 받지 않도록 자리만 잡아둔다
   // 캐시에 있으면 그걸 쓴다(다시 들을 땐 망을 안 탄다). 옛 응답이 길을 막으면 그때만 새로 받는다
-  const get = o => fetch(mp3Url(vid), o).then(r => r.ok ? r.blob() : null);
+  const get = o => fetch(mp3Url(vid), o).then(r => {
+    if (!r.ok) return null;
+    const n = +r.headers.get('content-length') || 0;
+    if (n > 쥘수있는크기) { r.body && r.body.cancel && r.body.cancel(); return 'too big'; }  // 긴 곡은 흘려듣는다
+    return r.blob();
+  });
   get({}).catch(() => get({ cache: 'reload' })).then(b => {
+    if (b === 'too big') { HELD.delete(vid); logit('너무 커서 안 쥠', { vid: vid }); return; }
     if (!b) { HELD.delete(vid); return; }
     HELD.set(vid, URL.createObjectURL(b));
     if (vid === AUD.dataset.vid) { const n = nextVid(); if (n) hold(n); }   // 지금 곡을 쥐었으면 곧바로 다음 곡도
