@@ -24,7 +24,7 @@ const save = () => { for (const k of ['vol', 'muted', 'shuffle', 'repeat', 'like
 
 /* ══ 데이터 ══ */
 const _m = location.search.match(/albums=(\w+)/); if (_m) document.body.dataset.albums = _m[1];
-window.APPV = '1791200108';                                        // 이 코드의 판 번호 (앱생성.py 가 넣는다)
+window.APPV = '1791207925';                                        // 이 코드의 판 번호 (앱생성.py 가 넣는다)
 /* 폰이 옛 코드를 붙들고 있으면 음악이 끊기는 등 엉뚱한 증상이 난다. 새 판이 올라와 있으면 한 번 새로 받는다. */
 fetch('ver.txt', { cache: 'no-store' }).then(r => r.text()).then(v => {
   v = (v || '').trim();
@@ -626,13 +626,23 @@ function renderList() {
 /* ══ 재생기 ══ 드롭박스에 MP3 가 있으면 그걸로 (광고 없음·영상이 내려가도 재생됨), 없으면 유튜브.
    재생기를 둘 두고 다음 곡을 미리 받아둔다 — 드롭박스는 주소를 두 번 넘겨줘서, 그때 가서 받으면 곡 사이가 끊긴다. */
 let USE = 'yt';                                                   // 지금 곡을 무엇으로 트는가
-let AUD_RETRY = 0, AUD_RETRY_PLAIN = 0;
+let AUD_RETRY = 0, AUD_RETRY_PLAIN = 0, BYUS = 0;                  // BYUS = 우리가 일부러 멈춘 때
 function mkAudio() {
   const a = new Audio(); a.preload = 'none';
   a.crossOrigin = 'anonymous';   // 이렇게 받아야 받아둔 것을 사본으로 다시 꺼낼 수 있다 (망을 또 타지 않는다)
   a.addEventListener('loadedmetadata', () => { if (a !== AUD || USE !== 'mp3') return; const q = cur(); if (!q) return; const m = trk(q.v, q.t).music[q.s]; if (m && !m.dur) m.dur = Math.round(a.duration); });
   a.addEventListener('ended', () => { if (a !== AUD || USE !== 'mp3') return; if (S.repeat === 2) { a.currentTime = 0; a.play().catch(() => {}); } else step(1); });
   for (const ev of ['play', 'pause']) a.addEventListener(ev, () => { if (a === AUD && USE === 'mp3') { syncBar(); markRows(); renderBody(); } });
+  a.addEventListener('pause', () => {                              // 우리가 멈춘 게 아닌데 멈췄다면 그게 단서다
+    if (a !== AUD || USE !== 'mp3') return;
+    if (Date.now() - BYUS < 800 || a.error || a.ended) return;
+    logit('소리 멈춤 (오류 아님)', { vid: a.dataset.vid, at: Math.round(a.currentTime), net: a.networkState, rs: a.readyState,
+      buf: (a.buffered.length ? Math.round(a.buffered.end(a.buffered.length - 1)) : 0),
+      hid: document.visibilityState === 'hidden' ? 1 : 0,
+      from: (a.src || '').startsWith('blob:') ? '사본' : '망' });
+  });
+  a.addEventListener('stalled', () => { if (a === AUD && USE === 'mp3' && !a.paused) logit('받기 멎음', { vid: a.dataset.vid, at: Math.round(a.currentTime), net: a.networkState, rs: a.readyState, hid: document.visibilityState === 'hidden' ? 1 : 0 }); });
+  a.addEventListener('suspend', () => { if (a === AUD && USE === 'mp3' && !a.paused && a.readyState < 3) logit('받기 중단됨', { vid: a.dataset.vid, at: Math.round(a.currentTime), net: a.networkState, rs: a.readyState, hid: document.visibilityState === 'hidden' ? 1 : 0 }); });
   a.addEventListener('playing', () => { if (a === AUD) { AUD_RETRY = 0; WANT = null; } });
   a.addEventListener('error', () => {
     if (a !== AUD || USE !== 'mp3') return;
@@ -675,7 +685,10 @@ function mkAudio() {
 let LAST_T = 0, WANT = null;
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState !== 'visible' || USE !== 'mp3' || !WANT) return;
-  if (!AUD.error && AUD.readyState >= 2) { WANT = null; return; }  // 멀쩡하면 건드리지 않는다
+  if (!AUD.error && AUD.readyState >= 2) {                          // 멀쩡한데 멈춰만 있으면 그 자리에서 다시 틀어준다
+    if (AUD.paused && Q.i >= 0) { logit('화면 켜짐 → 이어서 틂', { vid: AUD.dataset.vid, at: Math.round(AUD.currentTime) }); AUD.play().catch(() => {}); }
+    WANT = null; return;
+  }
   logit('화면 켜짐 → 다시 연결', { vid: WANT.vid, at: WANT.at });
   AUD_RETRY = 0; resume(AUD, WANT.vid, WANT.at, 0); WANT = null;
 });
@@ -701,7 +714,7 @@ const P = {
   getDuration:    () => USE === 'mp3' ? (isFinite(AUD.duration) ? AUD.duration : 0) : (ytReady && YTP.getDuration ? YTP.getDuration() : 0),
   getPlayerState: () => USE === 'mp3' ? (AUD.paused ? 2 : 1) : (ytReady && YTP.getPlayerState ? YTP.getPlayerState() : -1),
   playVideo:  () => USE === 'mp3' ? AUD.play().catch(() => {}) : YTP.playVideo(),
-  pauseVideo: () => USE === 'mp3' ? AUD.pause() : YTP.pauseVideo(),
+  pauseVideo: () => { BYUS = Date.now(); USE === 'mp3' ? AUD.pause() : YTP.pauseVideo(); },
   seekTo: (t) => { if (USE === 'mp3') AUD.currentTime = t; else YTP.seekTo(t, true); },
   setVolume: (v) => { AUD.volume = v / 100; NXT.volume = v / 100; if (ytReady) YTP.setVolume(v); },
   mute:   () => { AUD.muted = true;  if (ytReady) YTP.mute(); },
@@ -716,7 +729,7 @@ function load_(a, go) {
     USE = 'mp3'; AUD_RETRY = 0; LAST_T = at || 0;
     if (ytReady) YTP.stopVideo();
     if (NXT.dataset.vid === vid && NXT.readyState >= 2) {          // 미리 받아둔 게 있으면 그걸로 바꿔 끼운다 (끊김 없음)
-      const old = AUD; old.pause(); old.removeAttribute('src'); old.preload = 'none'; old.load(); delete old.dataset.vid;
+      const old = AUD; BYUS = Date.now(); old.pause(); old.removeAttribute('src'); old.preload = 'none'; old.load(); delete old.dataset.vid;
       AUD = NXT; NXT = old;
     } else if (AUD.dataset.vid !== vid) {
       AUD.src = held(vid) || mp3Url(vid); AUD.dataset.vid = vid;  // 쥔 사본이 있으면 망을 안 탄다
