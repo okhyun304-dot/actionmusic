@@ -24,7 +24,7 @@ const save = () => { for (const k of ['vol', 'muted', 'shuffle', 'repeat', 'like
 
 /* ══ 데이터 ══ */
 const _m = location.search.match(/albums=(\w+)/); if (_m) document.body.dataset.albums = _m[1];
-window.APPV = '1791195706';                                        // 이 코드의 판 번호 (앱생성.py 가 넣는다)
+window.APPV = '1791196707';                                        // 이 코드의 판 번호 (앱생성.py 가 넣는다)
 /* 폰이 옛 코드를 붙들고 있으면 음악이 끊기는 등 엉뚱한 증상이 난다. 새 판이 올라와 있으면 한 번 새로 받는다. */
 fetch('ver.txt', { cache: 'no-store' }).then(r => r.text()).then(v => {
   v = (v || '').trim();
@@ -632,7 +632,7 @@ function mkAudio() {
   a.addEventListener('loadedmetadata', () => { if (a !== AUD || USE !== 'mp3') return; const q = cur(); if (!q) return; const m = trk(q.v, q.t).music[q.s]; if (m && !m.dur) m.dur = Math.round(a.duration); });
   a.addEventListener('ended', () => { if (a !== AUD || USE !== 'mp3') return; if (S.repeat === 2) { a.currentTime = 0; a.play().catch(() => {}); } else step(1); });
   for (const ev of ['play', 'pause']) a.addEventListener(ev, () => { if (a === AUD && USE === 'mp3') { syncBar(); markRows(); renderBody(); } });
-  a.addEventListener('playing', () => { if (a === AUD) AUD_RETRY = 0; });
+  a.addEventListener('playing', () => { if (a === AUD) { AUD_RETRY = 0; WANT = null; } });
   a.addEventListener('error', () => {
     if (a !== AUD || USE !== 'mp3') return;
     const q = cur(); if (!q) return;
@@ -640,6 +640,11 @@ function mkAudio() {
     logit('MP3 끊김', { vid: m.vid, code: a.error && a.error.code, net: a.networkState, at: LAST_T, try: AUD_RETRY + 1, buf: (a.buffered.length ? Math.round(a.buffered.end(a.buffered.length - 1)) : 0), from: (a.src || '').replace(/^https?:\/\//, '').split('/')[0].slice(0, 20), why: (a.error && a.error.message || '').slice(0, 90), hid: document.visibilityState === 'hidden' ? 1 : 0, rs: a.readyState });
     if (hasMp3(m.vid)) {                                          // MP3 가 있는 곡은 유튜브로 넘기지 않는다 (유튜브가 더 잘 끊긴다)
       AUD_RETRY++;
+      WANT = { vid: m.vid, at: LAST_T };                           // 화면이 켜지면 여기서부터 다시 잇는다
+      if (document.visibilityState === 'hidden') {                  // 화면이 꺼져 있으면 새로 붙이는 것 자체가 안 된다
+        if (AUD_RETRY <= 3) resume(a, m.vid, LAST_T, AUD_RETRY + 2);  // 느슨하게 세 번만
+        return;
+      }
       if (AUD_RETRY === 3) toast('연결이 불안정합니다. 다시 잇는 중…');
       if (AUD_RETRY <= 8) resume(a, m.vid, LAST_T, AUD_RETRY - 1);  // 듣던 자리에서 새 주소로 다시 붙는다
       else logit('포기', { vid: m.vid, at: LAST_T });
@@ -651,9 +656,16 @@ function mkAudio() {
   });
   return a;
 }
-/* 끊긴 자리에서 다시 잇기. 드롭박스는 다른 사이트에서의 내려받기(fetch)를 막아 두어서
-   파일을 통째로 받아둘 수는 없다. 대신 새 주소로 다시 붙이면 그 자리에서 이어진다. */
-let LAST_T = 0;
+/* 끊긴 자리에서 다시 잇기.
+   화면이 꺼져 있는 동안엔 새로 붙이는 것이 거의 다 실패한다(크롬이 'Format error' 를 낸다).
+   그래서 화면이 꺼져 있으면 느슨하게만 시도하고, 켜지는 순간 그 자리에서 잇는다. */
+let LAST_T = 0, WANT = null;
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState !== 'visible' || USE !== 'mp3' || !WANT) return;
+  if (!AUD.error && AUD.readyState >= 2) { WANT = null; return; }  // 멀쩡하면 건드리지 않는다
+  logit('화면 켜짐 → 다시 연결', { vid: WANT.vid, at: WANT.at });
+  AUD_RETRY = 0; resume(AUD, WANT.vid, WANT.at, 0); WANT = null;
+});
 function resume(a, vid, at, n) {
   const wait = [400, 1200, 2500, 4000, 6000, 8000][Math.min(n, 5)];
   setTimeout(() => {
@@ -731,6 +743,7 @@ setInterval(prepNext, 2000);
 let STALL = 0;
 setInterval(() => {
   if (USE !== 'mp3' || AUD.paused) { STALL = 0; return; }
+  if (document.visibilityState === 'hidden') { STALL = 0; return; }  // 화면이 꺼지면 크롬이 시계를 늦춘다 → 멎은 것처럼 보인다
   if (AUD.readyState >= 3) { STALL = 0; return; }
   if (++STALL >= 6) {                                              // 12초 동안 못 나오면
     STALL = 0; const at = AUD.currentTime || 0; const vid = AUD.dataset.vid; if (!vid) return;
