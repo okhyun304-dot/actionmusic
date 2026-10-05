@@ -24,7 +24,7 @@ const save = () => { for (const k of ['vol', 'muted', 'shuffle', 'repeat', 'like
 
 /* ══ 데이터 ══ */
 const _m = location.search.match(/albums=(\w+)/); if (_m) document.body.dataset.albums = _m[1];
-window.APPV = '1791207925';                                        // 이 코드의 판 번호 (앱생성.py 가 넣는다)
+window.APPV = '1791209883';                                        // 이 코드의 판 번호 (앱생성.py 가 넣는다)
 /* 폰이 옛 코드를 붙들고 있으면 음악이 끊기는 등 엉뚱한 증상이 난다. 새 판이 올라와 있으면 한 번 새로 받는다. */
 fetch('ver.txt', { cache: 'no-store' }).then(r => r.text()).then(v => {
   v = (v || '').trim();
@@ -629,6 +629,7 @@ let USE = 'yt';                                                   // 지금 곡�
 let AUD_RETRY = 0, AUD_RETRY_PLAIN = 0, BYUS = 0;                  // BYUS = 우리가 일부러 멈춘 때
 function mkAudio() {
   const a = new Audio(); a.preload = 'none';
+  a.setAttribute('playsinline', ''); a.style.display = 'none'; document.documentElement.appendChild(a);  // 문서에 붙여 둔다 — 떠 있는 재생기는 폰이 붙잡아 주지 않을 수 있다
   a.crossOrigin = 'anonymous';   // 이렇게 받아야 받아둔 것을 사본으로 다시 꺼낼 수 있다 (망을 또 타지 않는다)
   a.addEventListener('loadedmetadata', () => { if (a !== AUD || USE !== 'mp3') return; const q = cur(); if (!q) return; const m = trk(q.v, q.t).music[q.s]; if (m && !m.dur) m.dur = Math.round(a.duration); });
   a.addEventListener('ended', () => { if (a !== AUD || USE !== 'mp3') return; if (S.repeat === 2) { a.currentTime = 0; a.play().catch(() => {}); } else step(1); });
