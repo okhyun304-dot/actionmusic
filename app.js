@@ -24,7 +24,7 @@ const save = () => { for (const k of ['vol', 'muted', 'shuffle', 'repeat', 'like
 
 /* ══ 데이터 ══ */
 const _m = location.search.match(/albums=(\w+)/); if (_m) document.body.dataset.albums = _m[1];
-window.APPV = '1791216969';                                        // 이 코드의 판 번호 (앱생성.py 가 넣는다)
+window.APPV = '1791217090';                                        // 이 코드의 판 번호 (앱생성.py 가 넣는다)
 /* 폰이 옛 코드를 붙들고 있으면 음악이 끊기는 등 엉뚱한 증상이 난다. 새 판이 올라와 있으면 한 번 새로 받는다. */
 fetch('ver.txt', { cache: 'no-store' }).then(r => r.text()).then(v => {
   v = (v || '').trim();
@@ -187,7 +187,7 @@ function logText() {                                              // 기록을 �
   const net = (navigator.connection && navigator.connection.effectiveType) || '?';
   const how = matchMedia('(display-mode: standalone)').matches ? '설치한 앱'
             : document.referrer.startsWith('android-app://') ? '앱(껍데기)' : '크롬 탭';
-  const head = `행동힙합 끊김기록 · 판 ${window.APPV} · ${how} · 재생기 ${USE} · 음원 ${host} · 망 ${net} · ${LOG.length}개`;
+  const head = `행동힙합 끊김기록 · 판 ${window.APPV} · ${how} · 잠금화면에 알린 위치 ${PS} · 재생기 ${USE} · 음원 ${host} · 망 ${net} · ${LOG.length}개`;
   return [head, ...LOG.slice().reverse().map(x => [x.t, x.what, x.vid, x.code != null ? '오류' + x.code : '', x.net != null ? 'net' + x.net : '', x.at != null ? Math.round(x.at) + '초' : '', x.try ? x.try + '번째' : '', x.buf != null ? '버퍼' + x.buf + '초' : '', x.hid ? '화면꺼짐' : '', x.rs != null ? '준비' + x.rs : '', x.from || '', x.why || ''].filter(Boolean).join(' · '))].join(String.fromCharCode(10));
 }
 
@@ -868,12 +868,14 @@ function mediaSession(t, m, b) {
     try { navigator.mediaSession.setActionHandler(k, f); } catch (e) {}
   }
 }
+let PS = '아직';
 function mediaState() {
   if (!('mediaSession' in navigator)) return;
   navigator.mediaSession.playbackState = playing() ? 'playing' : (Q.i >= 0 ? 'paused' : 'none');
   const d = P.getDuration(), c = P.getCurrentTime();                     // 잠금화면 진행바
   if (d > 0 && isFinite(d) && navigator.mediaSession.setPositionState) {
-    try { navigator.mediaSession.setPositionState({ duration: d, position: Math.min(c, d), playbackRate: 1 }); } catch (e) {}
+    try { navigator.mediaSession.setPositionState({ duration: d, position: Math.min(c, d), playbackRate: 1 }); PS = `${Math.round(Math.min(c, d))}/${Math.round(d)}초`; }
+    catch (e) { PS = '거부됨 ' + (e && e.message || '').slice(0, 40); }
   }
 }
 setInterval(mediaState, 1000);
