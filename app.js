@@ -24,7 +24,7 @@ const save = () => { for (const k of ['vol', 'muted', 'shuffle', 'repeat', 'like
 
 /* ══ 데이터 ══ */
 const _m = location.search.match(/albums=(\w+)/); if (_m) document.body.dataset.albums = _m[1];
-window.APPV = '1790844275';                                        // 이 코드의 판 번호 (앱생성.py 가 넣는다)
+window.APPV = '1791193041';                                        // 이 코드의 판 번호 (앱생성.py 가 넣는다)
 /* 폰이 옛 코드를 붙들고 있으면 음악이 끊기는 등 엉뚱한 증상이 난다. 새 판이 올라와 있으면 한 번 새로 받는다. */
 fetch('ver.txt', { cache: 'no-store' }).then(r => r.text()).then(v => {
   v = (v || '').trim();
@@ -182,13 +182,24 @@ function logit(what, extra) {
   while (LOG.length > 60) LOG.shift();
   try { store('log', LOG); } catch (e) {}
 }
+function logText() {                                              // 기록을 글로 (복사해서 보내기 쉽게)
+  const head = `행동힙합 끊김기록 · 판 ${window.APPV} · 재생기 ${USE} · ${LOG.length}개`;
+  return [head, ...LOG.slice().reverse().map(x => [x.t, x.what, x.vid, x.code != null ? '오류' + x.code : '', x.net != null ? 'net' + x.net : '', x.at != null ? Math.round(x.at) + '초' : '', x.try ? x.try + '번째' : ''].filter(Boolean).join(' · '))].join(String.fromCharCode(10));
+}
+
 function viewLog() {
   const rows = LOG.slice().reverse().map(x => `<div class="lgrow"><b>${x.t}</b> ${esc(x.what)}${x.vid ? ' · ' + x.vid : ''}${x.code != null ? ' · 오류 ' + x.code : ''}${x.net != null ? ' · net ' + x.net : ''}${x.at != null ? ' · ' + Math.round(x.at) + '초' : ''}${x.try ? ' · ' + x.try + '번째' : ''}</div>`).join('');
   $('#view').innerHTML = `<div class="pad"><div class="h1">끊김 기록</div>
     <p class="vintro">판 ${window.APPV} · 재생기 ${USE} · 기록 ${LOG.length}개. 위가 최근입니다.</p>
-    <div class="fbtns"><button class="btn" id="lgclr">기록 지우기</button></div>
+    <div class="fbtns"><button class="btn" id="lgcopy">복사</button><button class="btn ghost" id="lgclr">기록 지우기</button></div>
+    <textarea id="lgtx" readonly>${esc(logText())}</textarea>
     <div class="lgbox">${rows || '<div class="empty">아직 기록이 없습니다.</div>'}</div></div>`;
   $('#lgclr').onclick = () => { LOG.length = 0; store('log', LOG); viewLog(); };
+  $('#lgcopy').onclick = async () => {                            // 캡처 대신 글로 보내실 수 있게
+    const t = logText(); const el = $('#lgtx');
+    try { await navigator.clipboard.writeText(t); toast('복사했습니다'); }
+    catch (e) { el.focus(); el.select(); try { document.execCommand('copy'); toast('복사했습니다'); } catch (e2) { toast('아래 글을 길게 눌러 복사하세요'); } }
+  };
 }
 
 /* ══ 행동영상 ══ 대장님 글로 만든 낭독 영상. 글과는 따로 두고, 글에서는 한 줄 링크로만 넘어간다. */
@@ -642,7 +653,7 @@ let LAST_T = 0;
 function resume(a, vid, at, n) {
   const wait = [400, 1200, 2500, 4000, 6000, 8000][Math.min(n, 5)];
   setTimeout(() => {
-    a.src = mp3Url(vid) + '&t=' + Date.now(); a.load();
+    a.src = mp3Url(vid) + '?t=' + Date.now(); a.load();
     const seek = () => { try { if (at > 1) a.currentTime = at; } catch (e) {} a.play().catch(() => {}); };
     a.addEventListener('loadedmetadata', seek, { once: true });
     setTimeout(() => { if (a.readyState === 0) a.play().catch(() => {}); }, 2000);
@@ -651,10 +662,10 @@ function resume(a, vid, at, n) {
 setInterval(() => { if (USE === 'mp3' && !AUD.paused && AUD.currentTime > 0) LAST_T = AUD.currentTime; }, 500);
 let AUD = mkAudio(), NXT = mkAudio();                             // AUD = 지금 나오는 것, NXT = 다음 곡 미리 받는 것
 document.addEventListener('DOMContentLoaded', () => { const vb = document.querySelector('.video'); if (vb) vb.style.display = 'none'; });
-const mp3Url = vid => (DATA && DATA.mp3base) ? DATA.mp3base + '&preview=' + vid + '.mp3&dl=1' : null;
+const mp3Url = vid => (DATA && DATA.mp3base) ? DATA.mp3base + '/' + vid + '.mp3' : null;
 const hasMp3 = vid => !!(DATA && DATA.mp3base && DATA.mp3 && DATA.mp3[vid]);
 const vidUrl = (vol, k) => { const n = `${vol}-${pad2(k + 1)}`;
-  return (DATA && DATA.vidbase && DATA.vid && DATA.vid[n]) ? DATA.vidbase + '&preview=' + n + '.mp4&dl=1' : null; };   // 낭독 영상 (드롭박스 앱_영상)
+  return (DATA && DATA.vidbase && DATA.vid && DATA.vid[n]) ? DATA.vidbase + '/' + n + '.mp4' : null; };   // 낭독 영상
 const pReady = () => USE === 'mp3' ? true : ytReady;
 const P = {
   getCurrentTime: () => USE === 'mp3' ? (AUD.currentTime || 0) : (ytReady && YTP.getCurrentTime ? YTP.getCurrentTime() : 0),
