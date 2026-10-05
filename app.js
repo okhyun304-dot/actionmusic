@@ -24,7 +24,7 @@ const save = () => { for (const k of ['vol', 'muted', 'shuffle', 'repeat', 'like
 
 /* ══ 데이터 ══ */
 const _m = location.search.match(/albums=(\w+)/); if (_m) document.body.dataset.albums = _m[1];
-window.APPV = '1791199963';                                        // 이 코드의 판 번호 (앱생성.py 가 넣는다)
+window.APPV = '1791200108';                                        // 이 코드의 판 번호 (앱생성.py 가 넣는다)
 /* 폰이 옛 코드를 붙들고 있으면 음악이 끊기는 등 엉뚱한 증상이 난다. 새 판이 올라와 있으면 한 번 새로 받는다. */
 fetch('ver.txt', { cache: 'no-store' }).then(r => r.text()).then(v => {
   v = (v || '').trim();
@@ -642,12 +642,12 @@ function mkAudio() {
     if (hasMp3(m.vid)) {                                          // MP3 가 있는 곡은 유튜브로 넘기지 않는다 (유튜브가 더 잘 끊긴다)
       AUD_RETRY++;
       WANT = { vid: m.vid, at: LAST_T };
-      if (a.crossOrigin && a.error && a.error.code === 4 && !AUD_RETRY_PLAIN) {
-        AUD_RETRY_PLAIN = 1;                                       // 교차출처가 막힌 곳이면 예전 방식으로 물러선다
+      const u = held(m.vid);
+      if (!u && a.crossOrigin && a.error && a.error.code === 4 && LAST_T < 2 && !AUD_RETRY_PLAIN) {
+        AUD_RETRY_PLAIN = 1;                                       // 곡을 시작조차 못 하면 교차출처가 막힌 곳이다 → 예전 방식으로
         logit('예전 방식으로 물러섬', { vid: m.vid, at: LAST_T });
         a.crossOrigin = null; resume(a, m.vid, LAST_T, 0); return;
       }
-      const u = held(m.vid);
       if (u) {                                                     // 손에 들고 있으면 통신 없이 바로 잇는다
         logit('쥐고 있던 곡으로 이음', { vid: m.vid, at: LAST_T });
         a.src = u; a.load();
