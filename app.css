@@ -578,3 +578,5 @@ body[data-albums=row] .alb{padding:10px}body[data-albums=row] .alb b{font-size:1
 
 .lgnet{white-space:pre-wrap;word-break:break-all;font:12px/1.6 ui-monospace,monospace;color:var(--dim);background:rgba(255,255,255,.04);border-radius:10px;padding:10px 12px;margin:10px 0 0}
 .lgnet:empty{display:none}
+
+.lgwhy{color:var(--dim);font-size:11px;word-break:break-all}

@@ -24,7 +24,7 @@ const save = () => { for (const k of ['vol', 'muted', 'shuffle', 'repeat', 'like
 
 /* ══ 데이터 ══ */
 const _m = location.search.match(/albums=(\w+)/); if (_m) document.body.dataset.albums = _m[1];
-window.APPV = '1791194804';                                        // 이 코드의 판 번호 (앱생성.py 가 넣는다)
+window.APPV = '1791195706';                                        // 이 코드의 판 번호 (앱생성.py 가 넣는다)
 /* 폰이 옛 코드를 붙들고 있으면 음악이 끊기는 등 엉뚱한 증상이 난다. 새 판이 올라와 있으면 한 번 새로 받는다. */
 fetch('ver.txt', { cache: 'no-store' }).then(r => r.text()).then(v => {
   v = (v || '').trim();
@@ -186,11 +186,11 @@ function logText() {                                              // 기록을 �
   const host = (DATA && DATA.mp3base || '').replace(/^https?:\/\//, '').split('/')[0].slice(0, 28);
   const net = (navigator.connection && navigator.connection.effectiveType) || '?';
   const head = `행동힙합 끊김기록 · 판 ${window.APPV} · 재생기 ${USE} · 음원 ${host} · 망 ${net} · ${LOG.length}개`;
-  return [head, ...LOG.slice().reverse().map(x => [x.t, x.what, x.vid, x.code != null ? '오류' + x.code : '', x.net != null ? 'net' + x.net : '', x.at != null ? Math.round(x.at) + '초' : '', x.try ? x.try + '번째' : '', x.buf != null ? '버퍼' + x.buf + '초' : '', x.from || ''].filter(Boolean).join(' · '))].join(String.fromCharCode(10));
+  return [head, ...LOG.slice().reverse().map(x => [x.t, x.what, x.vid, x.code != null ? '오류' + x.code : '', x.net != null ? 'net' + x.net : '', x.at != null ? Math.round(x.at) + '초' : '', x.try ? x.try + '번째' : '', x.buf != null ? '버퍼' + x.buf + '초' : '', x.hid ? '화면꺼짐' : '', x.rs != null ? '준비' + x.rs : '', x.from || '', x.why || ''].filter(Boolean).join(' · '))].join(String.fromCharCode(10));
 }
 
 function viewLog() {
-  const rows = LOG.slice().reverse().map(x => `<div class="lgrow"><b>${x.t}</b> ${esc(x.what)}${x.vid ? ' · ' + x.vid : ''}${x.code != null ? ' · 오류 ' + x.code : ''}${x.net != null ? ' · net ' + x.net : ''}${x.at != null ? ' · ' + Math.round(x.at) + '초' : ''}${x.try ? ' · ' + x.try + '번째' : ''}${x.buf != null ? ' · 버퍼 ' + x.buf + '초' : ''}${x.from ? ' · ' + esc(x.from) : ''}</div>`).join('');
+  const rows = LOG.slice().reverse().map(x => `<div class="lgrow"><b>${x.t}</b> ${esc(x.what)}${x.vid ? ' · ' + x.vid : ''}${x.code != null ? ' · 오류 ' + x.code : ''}${x.net != null ? ' · net ' + x.net : ''}${x.at != null ? ' · ' + Math.round(x.at) + '초' : ''}${x.try ? ' · ' + x.try + '번째' : ''}${x.buf != null ? ' · 버퍼 ' + x.buf + '초' : ''}${x.hid ? ' · 화면꺼짐' : ''}${x.rs != null ? ' · 준비 ' + x.rs : ''}${x.why ? '<br><span class="lgwhy">' + esc(x.why) + '</span>' : ''}${x.from ? ' · ' + esc(x.from) : ''}</div>`).join('');
   $('#view').innerHTML = `<div class="pad"><div class="h1">끊김 기록</div>
     <p class="vintro">${esc(logText().split(String.fromCharCode(10))[0])}<br>위가 최근입니다.</p>
     <div class="fbtns"><button class="btn" id="lgcopy">복사</button><button class="btn ghost" id="lgtest">회선 점검</button><button class="btn ghost" id="lgclr">기록 지우기</button></div>
@@ -637,7 +637,7 @@ function mkAudio() {
     if (a !== AUD || USE !== 'mp3') return;
     const q = cur(); if (!q) return;
     const m = trk(q.v, q.t).music[q.s];
-    logit('MP3 끊김', { vid: m.vid, code: a.error && a.error.code, net: a.networkState, at: LAST_T, try: AUD_RETRY + 1, buf: (a.buffered.length ? Math.round(a.buffered.end(a.buffered.length - 1)) : 0), from: (a.src || '').replace(/^https?:\/\//, '').split('/')[0].slice(0, 20) });
+    logit('MP3 끊김', { vid: m.vid, code: a.error && a.error.code, net: a.networkState, at: LAST_T, try: AUD_RETRY + 1, buf: (a.buffered.length ? Math.round(a.buffered.end(a.buffered.length - 1)) : 0), from: (a.src || '').replace(/^https?:\/\//, '').split('/')[0].slice(0, 20), why: (a.error && a.error.message || '').slice(0, 90), hid: document.visibilityState === 'hidden' ? 1 : 0, rs: a.readyState });
     if (hasMp3(m.vid)) {                                          // MP3 가 있는 곡은 유튜브로 넘기지 않는다 (유튜브가 더 잘 끊긴다)
       AUD_RETRY++;
       if (AUD_RETRY === 3) toast('연결이 불안정합니다. 다시 잇는 중…');
