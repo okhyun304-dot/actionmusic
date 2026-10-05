@@ -24,7 +24,7 @@ const save = () => { for (const k of ['vol', 'muted', 'shuffle', 'repeat', 'like
 
 /* ══ 데이터 ══ */
 const _m = location.search.match(/albums=(\w+)/); if (_m) document.body.dataset.albums = _m[1];
-window.APPV = '1791196707';                                        // 이 코드의 판 번호 (앱생성.py 가 넣는다)
+window.APPV = '1791199099';                                        // 이 코드의 판 번호 (앱생성.py 가 넣는다)
 /* 폰이 옛 코드를 붙들고 있으면 음악이 끊기는 등 엉뚱한 증상이 난다. 새 판이 올라와 있으면 한 번 새로 받는다. */
 fetch('ver.txt', { cache: 'no-store' }).then(r => r.text()).then(v => {
   v = (v || '').trim();
@@ -640,7 +640,14 @@ function mkAudio() {
     logit('MP3 끊김', { vid: m.vid, code: a.error && a.error.code, net: a.networkState, at: LAST_T, try: AUD_RETRY + 1, buf: (a.buffered.length ? Math.round(a.buffered.end(a.buffered.length - 1)) : 0), from: (a.src || '').replace(/^https?:\/\//, '').split('/')[0].slice(0, 20), why: (a.error && a.error.message || '').slice(0, 90), hid: document.visibilityState === 'hidden' ? 1 : 0, rs: a.readyState });
     if (hasMp3(m.vid)) {                                          // MP3 가 있는 곡은 유튜브로 넘기지 않는다 (유튜브가 더 잘 끊긴다)
       AUD_RETRY++;
-      WANT = { vid: m.vid, at: LAST_T };                           // 화면이 켜지면 여기서부터 다시 잇는다
+      WANT = { vid: m.vid, at: LAST_T };
+      const u = held(m.vid);
+      if (u) {                                                     // 손에 들고 있으면 통신 없이 바로 잇는다
+        logit('쥐고 있던 곡으로 이음', { vid: m.vid, at: LAST_T });
+        a.src = u; a.load();
+        a.addEventListener('loadedmetadata', () => { try { if (LAST_T > 1) a.currentTime = LAST_T; } catch (e) {} a.play().catch(() => {}); }, { once: true });
+        return;
+      }                           // 화면이 켜지면 여기서부터 다시 잇는다
       if (document.visibilityState === 'hidden') {                  // 화면이 꺼져 있으면 새로 붙이는 것 자체가 안 된다
         if (AUD_RETRY <= 3) resume(a, m.vid, LAST_T, AUD_RETRY + 2);  // 느슨하게 세 번만
         return;
@@ -713,6 +720,7 @@ function load_(a, go) {
     if (at) { try { AUD.currentTime = at; } catch (e) {} }
     if (vb) vb.style.display = 'none';                             // MP3 로 트는 동안엔 유튜브 창이 필요 없다
     if (go) AUD.play().catch(() => syncBar());
+    hold(vid);                                                     // 지금 곡을 통째로 받아 쥔다
     if (NXT.dataset.vid && NXT.dataset.vid !== vid) dropNext();     // 엉뚱한 곡을 미리 받고 있었으면 버린다
   } else {
     USE = 'yt'; AUD.pause(); AUD.removeAttribute('src'); delete AUD.dataset.vid;
@@ -721,6 +729,24 @@ function load_(a, go) {
     go ? (at ? YTP.loadVideoById({ videoId: vid, startSeconds: at }) : YTP.loadVideoById(vid))
        : YTP.cueVideoById({ videoId: vid, startSeconds: at });
   }
+}
+/* ══ 곡 쟁여두기 ══
+   화면이 꺼지면 폰이 통신을 재운다. 그때 크롬이 받던 읽기 하나가 실패하면
+   이미 받아둔 209초를 쥐고도 재생기를 통째로 내려버린다(PIPELINE_ERROR_READ).
+   그래서 곡을 통째로 받아 손에 들고 있다가, 끊기면 통신 없이 그 자리에서 다시 튼다. */
+const HELD = new Map();                                            // vid → 손에 든 곡 주소
+function held(vid) { return HELD.get(vid) || null; }
+function hold(vid) {
+  if (!vid || HELD.has(vid) || !hasMp3(vid)) return;
+  HELD.set(vid, null);                                             // 두 번 받지 않도록 자리만 잡아둔다
+  fetch(mp3Url(vid)).then(r => r.ok ? r.blob() : null).then(b => {
+    if (!b) { HELD.delete(vid); return; }
+    HELD.set(vid, URL.createObjectURL(b));
+    for (const k of [...HELD.keys()].slice(0, -3)) {                // 셋만 들고 있는다
+      const u = HELD.get(k); if (u) URL.revokeObjectURL(u);
+      HELD.delete(k);
+    }
+  }).catch(() => HELD.delete(vid));
 }
 function buffered(a) { try { return a.buffered.length ? a.buffered.end(a.buffered.length - 1) - a.currentTime : 0; } catch (e) { return 0; } }
 function prepNext() {
@@ -735,6 +761,7 @@ function prepNext() {
   const t = trk(nx.v, nx.t); const m = t && t.music[nx.s];
   if (!m || !hasMp3(m.vid) || NXT.dataset.vid === m.vid) return;
   NXT.pause(); NXT.preload = 'auto'; NXT.src = mp3Url(m.vid); NXT.dataset.vid = m.vid; NXT.volume = S.vol / 100; NXT.load();
+  hold(m.vid);                                                    // 다음 곡도 쥐어 둔다
 }
 function dropNext() { if (NXT.dataset.vid) { NXT.pause(); NXT.removeAttribute('src'); NXT.preload = 'none'; NXT.load(); delete NXT.dataset.vid; } }
 setInterval(prepNext, 2000);
