@@ -24,7 +24,7 @@ const save = () => { for (const k of ['vol', 'muted', 'shuffle', 'repeat', 'like
 
 /* ══ 데이터 ══ */
 const _m = location.search.match(/albums=(\w+)/); if (_m) document.body.dataset.albums = _m[1];
-window.APPV = '1791219914';                                        // 이 코드의 판 번호 (앱생성.py 가 넣는다)
+window.APPV = '1791299015';                                        // 이 코드의 판 번호 (앱생성.py 가 넣는다)
 /* 폰이 옛 코드를 붙들고 있으면 음악이 끊기는 등 엉뚱한 증상이 난다. 새 판이 올라와 있으면 한 번 새로 받는다. */
 fetch('ver.txt', { cache: 'no-store' }).then(r => r.text()).then(v => {
   v = (v || '').trim();
@@ -177,17 +177,64 @@ let LASTREAD = load('lastread', null);                             // 마지막�
 
 /* ══ 끊김 기록 ══ 무엇이 왜 끊겼는지 폰에서 바로 볼 수 있게 남긴다 (#/log) */
 const LOG = load('log', []);
+/* 멤버가 "끊겼어요" 한마디만 보내면 다시 원인을 찾는 데 시간이 든다.
+   기종·OS·브라우저·얼마나 들었는지를 기록이 스스로 달고 다니게 한다. */
+const 기기 = (() => {
+  const u = navigator.userAgent;
+  let os = '?', 폰 = '?', 브 = '?';
+  let m = u.match(/Android ([\d.]+);\s*([^;)]+)/);                // 모델명은 첫 ; 까지. 뒤의 Build/… 와 wv 는 버린다
+  if (m) { os = '안드로이드 ' + m[1]; 폰 = m[2].replace(/\s+Build\/.*$/, '').trim() || '?'; }
+  else if (/iPhone|iPad/.test(u)) {
+    폰 = /iPad/.test(u) ? '아이패드' : '아이폰';
+    const v = u.match(/OS (\d+[_\d]*)/); os = 'iOS ' + (v ? v[1].replace(/_/g, '.') : '?');
+  } else if (/Windows NT ([\d.]+)/.test(u)) { os = '윈도우'; 폰 = 'PC'; }
+  else if (/Mac OS X/.test(u)) { os = '맥'; 폰 = 'PC'; }
+  if (/SamsungBrowser\/([\d.]+)/.test(u)) 브 = '삼성인터넷 ' + RegExp.$1.split('.')[0];
+  else if (/Whale\/([\d.]+)/.test(u)) 브 = '웨일 ' + RegExp.$1.split('.')[0];
+  else if (/EdgA?\/([\d.]+)/.test(u)) 브 = '엣지 ' + RegExp.$1.split('.')[0];
+  else if (/CriOS\/([\d.]+)/.test(u)) 브 = '크롬(iOS) ' + RegExp.$1.split('.')[0];
+  else if (/FxiOS|Firefox\/([\d.]+)/.test(u)) 브 = '파이어폭스';
+  else if (/Chrome\/([\d.]+)/.test(u)) 브 = '크롬 ' + RegExp.$1.split('.')[0];
+  else if (/Safari\/([\d.]+)/.test(u)) 브 = '사파리';
+  return { 폰, os, 브 };
+})();
+let 들은초 = load('played', 0);
+setInterval(() => {                                                // 얼마나 들었는지 (끊김 횟수와 같이 봐야 뜻이 있다)
+  if (playing()) { 들은초 += 2; if (들은초 % 60 < 2) store('played', 들은초); }
+}, 2000);
+const 들은시간 = () => 들은초 >= 3600 ? `${Math.floor(들은초 / 3600)}시간 ${Math.round(들은초 % 3600 / 60)}분`
+                   : 들은초 >= 60 ? `${Math.round(들은초 / 60)}분` : `${들은초}초`;
+
 function logit(what, extra) {
   LOG.push({ t: new Date().toTimeString().slice(0, 8), what, ...extra });
   while (LOG.length > 60) LOG.shift();
   try { store('log', LOG); } catch (e) {}
+  if (/끊김|멈춤|멎음|중단/.test(what)) 알리기();
+}
+
+/* 끊기면 스스로 알린다. 멤버가 "끊겼어요" 한마디만 보내면 원인을 다시 찾아야 한다.
+   받을 곳(DATA.report)이 없으면 아무것도 하지 않는다 — 기록은 폰 안에만 남는다. */
+let 알린때 = 0, 알림예약 = 0;
+function 알리기() {
+  if (!(DATA && DATA.report)) return;
+  clearTimeout(알림예약);
+  알림예약 = setTimeout(() => {                                    // 연달아 터질 땐 몰아서 한 번만
+    if (Date.now() - 알린때 < 600000) return;                      // 10분에 한 번까지
+    알린때 = Date.now();
+    try {
+      fetch(DATA.report, { method: 'POST', mode: 'no-cors', keepalive: true,
+        headers: { 'Content-Type': 'text/plain' }, body: logText() }).catch(() => {});
+    } catch (e) {}
+  }, 15000);
 }
 function logText() {                                              // 기록을 글로 (복사해서 보내기 쉽게)
   const host = (DATA && DATA.mp3base || '').replace(/^https?:\/\//, '').split('/')[0].slice(0, 28);
   const net = (navigator.connection && navigator.connection.effectiveType) || '?';
   const how = matchMedia('(display-mode: standalone)').matches ? '설치한 앱'
             : document.referrer.startsWith('android-app://') ? '앱(껍데기)' : '크롬 탭';
-  const head = `행동힙합 끊김기록 · 판 ${window.APPV} · ${how} · 재생기 ${USE} · 음원 ${host} · 망 ${net} · ${LOG.length}개`;
+  const head = [`행동힙합 끊김기록 · 판 ${window.APPV}`,
+    `${기기.폰} · ${기기.os} · ${기기.브} · ${how}`,
+    `들은 시간 ${들은시간()} · 끊김 ${LOG.filter(x => /끊김|멈춤|멎음|중단/.test(x.what)).length}회 · 망 ${net} · 음원 ${host}`].join(String.fromCharCode(10));
   return [head, ...LOG.slice().reverse().map(x => [x.t, x.what, x.vid, x.code != null ? '오류' + x.code : '', x.net != null ? 'net' + x.net : '', x.at != null ? Math.round(x.at) + '초' : '', x.try ? x.try + '번째' : '', x.buf != null ? '버퍼' + x.buf + '초' : '', x.hid ? '화면꺼짐' : '', x.rs != null ? '준비' + x.rs : '', x.from || '', x.why || ''].filter(Boolean).join(' · '))].join(String.fromCharCode(10));
 }
 
@@ -195,12 +242,19 @@ function viewLog() {
   const rows = LOG.slice().reverse().map(x => `<div class="lgrow"><b>${x.t}</b> ${esc(x.what)}${x.vid ? ' · ' + x.vid : ''}${x.code != null ? ' · 오류 ' + x.code : ''}${x.net != null ? ' · net ' + x.net : ''}${x.at != null ? ' · ' + Math.round(x.at) + '초' : ''}${x.try ? ' · ' + x.try + '번째' : ''}${x.buf != null ? ' · 버퍼 ' + x.buf + '초' : ''}${x.hid ? ' · 화면꺼짐' : ''}${x.rs != null ? ' · 준비 ' + x.rs : ''}${x.why ? '<br><span class="lgwhy">' + esc(x.why) + '</span>' : ''}${x.from ? ' · ' + esc(x.from) : ''}</div>`).join('');
   $('#view').innerHTML = `<div class="pad"><div class="h1">끊김 기록</div>
     <p class="vintro">${esc(logText().split(String.fromCharCode(10))[0])}<br>위가 최근입니다.</p>
-    <div class="fbtns"><button class="btn" id="lgcopy">복사</button><button class="btn ghost" id="lgtest">회선 점검</button><button class="btn ghost" id="lgclr">기록 지우기</button></div>
+    <div class="fbtns"><button class="btn" id="lgsend">보내기</button><button class="btn ghost" id="lgcopy">복사</button><button class="btn ghost" id="lgtest">회선 점검</button><button class="btn ghost" id="lgclr">기록 지우기</button></div>
     <pre id="lgnet" class="lgnet"></pre>
     <textarea id="lgtx" readonly>${esc(logText())}</textarea>
     <div class="lgbox">${rows || '<div class="empty">아직 기록이 없습니다.</div>'}</div></div>`;
   $('#lgclr').onclick = () => { LOG.length = 0; store('log', LOG); viewLog(); };
   $('#lgtest').onclick = () => netCheck();
+  const sb = $('#lgsend');
+  if (sb) sb.onclick = async () => {
+    const t = logText();
+    if (navigator.share) { try { await navigator.share({ title: '행동힙합 끊김기록', text: t }); return; } catch (e) { if (e && e.name === 'AbortError') return; } }
+    try { await navigator.clipboard.writeText(t); toast('복사했습니다. 오키에게 붙여넣어 주세요'); }
+    catch (e) { toast('아래 글을 길게 눌러 복사해 주세요'); }
+  };
   $('#lgcopy').onclick = async () => {                            // 캡처 대신 글로 보내실 수 있게
     const t = logText(); const el = $('#lgtx');
     try { await navigator.clipboard.writeText(t); toast('복사했습니다'); }
